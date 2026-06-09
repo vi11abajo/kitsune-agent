@@ -1,0 +1,104 @@
+import { describe, it, expect, vi } from 'vitest';
+import { allToolSpecs, buildTools } from '../src/tools/index.js';
+import { MODULES } from '../src/constants.js';
+import type { ToolContext } from '../src/tools/types.js';
+
+function ctxWith(over: Partial<{ client: any; chain: any }>): ToolContext {
+  return { client: over.client ?? {}, chain: over.chain ?? {}, config: {} } as unknown as ToolContext;
+}
+
+const find = (name: string) => allToolSpecs().find(t => t.name === name)!;
+
+describe('tool catalog', () => {
+  it('includes representative tools from every module', () => {
+    const names = allToolSpecs().map(t => t.name);
+    expect(names).toContain('market_get_price');
+    expect(names).toContain('vault_list');
+    expect(names).toContain('strategy_pause');
+    expect(names).toContain('portfolio_get');
+    expect(names).toContain('marketplace_list');
+  });
+
+  it('buildTools drops write tools in read-only mode', () => {
+    const tools = buildTools({ modules: ['market', 'strategy'], readOnly: true });
+    expect(tools.some(t => t.name === 'strategy_pause')).toBe(false);
+    expect(tools.some(t => t.name === 'market_get_price')).toBe(true);
+  });
+
+  it('buildTools filters by module', () => {
+    const tools = buildTools({ modules: ['market'], readOnly: false });
+    expect(tools.every(t => t.module === 'market')).toBe(true);
+  });
+
+  it('buildTools hides auth-requiring tools when no signer', () => {
+    const tools = buildTools({ modules: [...MODULES], readOnly: false, hasSigner: false });
+    expect(tools.every(t => t.auth === 'none')).toBe(true);
+    expect(tools.some(t => t.name === 'market_get_price')).toBe(true);
+    expect(tools.some(t => t.name === 'leaderboard_get')).toBe(true);
+    expect(tools.some(t => t.name === 'marketplace_list')).toBe(true);
+    expect(tools.some(t => t.name === 'vault_list')).toBe(false);
+    expect(tools.some(t => t.name === 'strategy_pause')).toBe(false);
+    expect(tools.some(t => t.name === 'market_run_backtest')).toBe(false);
+  });
+
+  // ---- read handlers ----
+  it('market_get_price calls client.get with the price path', async () => {
+    const client = { get: vi.fn().mockResolvedValue({ price: 42 }) };
+    const out = await find('market_get_price').handler({ base: 'btc', quote: 'usdt' }, ctxWith({ client }));
+    expect(client.get).toHaveBeenCalledWith('/prices/BTC/USDT');
+    expect(out).toEqual({ price: 42 });
+  });
+
+  it('vault_list uses authedGet', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue({ vaults: [] }) };
+    await find('vault_list').handler({ owner: '0xowner' }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith('/vaults/0xowner');
+  });
+
+  it('strategy_get_metrics uses authedGet with the strategies path', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue({}) };
+    await find('strategy_get_metrics').handler({ vault: '0xv', strategyId: '3' }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith('/strategies/0xv/3/metrics');
+  });
+
+  it('portfolio_get uses authedGet', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue({}) };
+    await find('portfolio_get').handler({ owner: '0xo' }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith('/portfolio/0xo');
+  });
+
+  it('marketplace_list uses public get', async () => {
+    const client = { get: vi.fn().mockResolvedValue([]) };
+    await find('marketplace_list').handler({}, ctxWith({ client }));
+    expect(client.get).toHaveBeenCalledWith('/marketplace', { status: undefined, tradingPair: undefined });
+  });
+
+  // ---- write handlers ----
+  it('market_run_backtest posts the config via authedSend', async () => {
+    const client = { authedSend: vi.fn().mockResolvedValue({}) };
+    const cfg = { pair: 'BTC/USDT', startDate: '2024-01-01', endDate: '2024-02-01' };
+    await find('market_run_backtest').handler({ config: cfg }, ctxWith({ client }));
+    expect(client.authedSend).toHaveBeenCalledWith('POST', '/backtest/run', cfg);
+  });
+
+  it('strategy_create calls chain.createStrategy and returns a tx result', async () => {
+    const chain = { createStrategy: vi.fn().mockResolvedValue('0xabc') };
+    const out = await find('strategy_create').handler({
+      vault: '0xv',
+      baseToken: '0x10', quoteToken: '0x20', allowedExecutor: '0x30',
+      takeProfitBps: 500, stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
+      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
+    }, ctxWith({ chain }));
+    expect(chain.createStrategy).toHaveBeenCalledTimes(1);
+    const [vaultArg, cfgArg] = chain.createStrategy.mock.calls[0];
+    expect(vaultArg).toBe('0xv');
+    expect(cfgArg.dcaMultiplier).toBe('1500000000000000000');
+    expect(out).toEqual({ txHash: '0xabc', status: 'submitted' });
+  });
+
+  it('marketplace_copy uses authedSend with the copy path', async () => {
+    const client = { authedSend: vi.fn().mockResolvedValue({}) };
+    await find('marketplace_copy').handler({ id: '7', vault: '0xv' }, ctxWith({ client }));
+    expect(client.authedSend).toHaveBeenCalledWith('POST', '/marketplace/7/copy', { vault: '0xv' });
+  });
+});
