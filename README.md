@@ -7,7 +7,7 @@ Let your AI agent read markets, manage vaults, and run DCA / grid strategies on-
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
-![Built for Pharos](https://img.shields.io/badge/built%20for-Pharos%20Atlantic-6E56CF)
+![Built for Pharos](https://img.shields.io/badge/built%20for-Pharos%20Mainnet-6E56CF)
 ![MCP](https://img.shields.io/badge/MCP-compatible-111111)
 ![Skills](https://img.shields.io/badge/Agent-Skills-0a7)
 
@@ -18,7 +18,7 @@ Let your AI agent read markets, manage vaults, and run DCA / grid strategies on-
 ## What is this?
 
 Kitsune Agent Trade Kit connects AI assistants directly to the **Kitsune** automated-trading protocol on
-the **Pharos Atlantic** testnet. Instead of clicking through a dApp, you describe what you want — the agent
+**Pharos** (mainnet by default; the Atlantic testnet is also supported). Instead of clicking through a dApp, you describe what you want — the agent
 executes it: check a price, spin up a vault, launch a DCA strategy, read your PnL, or copy a strategy from
 the marketplace.
 
@@ -48,7 +48,7 @@ Plus **5 plug-and-play Skills** for clients that support the Agent Skills protoc
 | **Portfolio** | aggregated PnL, vault activity, leaderboard |
 | **Marketplace** | browse, share, copy, and delist strategies |
 | **Self-custody** | keys stay local; SIWE + on-chain txs signed on your machine |
-| **Safety rails** | read-only mode, signer-gated tools, `[CAUTION]` labels, testnet by default |
+| **Safety rails** | read-only mode, signer-gated tools, `[CAUTION]` labels, multi-chain (mainnet + testnet) |
 
 ---
 
@@ -96,21 +96,27 @@ kitsune market price BTC USDT
 The interactive way is to create `~/.kitsune/config.toml`:
 
 ```toml
-default_profile = "testnet"
+default_profile = "mainnet"
 
+[profiles.mainnet]
+api_url     = "https://api.kitsune.finance/api"
+chain_id    = 1672
+rpc_url     = "https://rpc.pharos.xyz"
+private_key = "0x..."          # self-custody; required ONLY for sign-in + on-chain tools
+
+# Pharos Atlantic testnet — no real funds at risk
 [profiles.testnet]
 api_url     = "https://api.kitsune.finance/api"
 chain_id    = 688689
 rpc_url     = "https://atlantic.dplabs-internal.com"
-private_key = "0x..."          # self-custody; required ONLY for sign-in + on-chain tools
+private_key = "0x..."
 
 # Read-only profile: omit private_key, all write/sign-in tools are hidden
 [profiles.readonly]
-api_url        = "https://api.kitsune.finance/api"
 wallet_address = "0x..."
 ```
 
-> Pharos Atlantic is a **testnet** — no real funds at risk. Get test PHRS from the Pharos faucet.
+> ⚠️ The default `mainnet` profile transacts with **real funds** on Pharos. For risk-free testing use `--profile testnet` (Pharos Atlantic) and/or `--read-only`.
 
 ### 3. Connect your AI client
 
@@ -123,7 +129,7 @@ This prints the MCP registration to drop into your client config:
 ```json
 {
   "mcpServers": {
-    "kitsune": { "command": "kitsune-mcp", "args": ["--profile", "testnet"] }
+    "kitsune": { "command": "kitsune-mcp", "args": ["--profile", "mainnet"] }
   }
 }
 ```
@@ -141,9 +147,10 @@ Register once; your agent gets the tools. Startup options:
 | You want | Command |
 |---|---|
 | Market data only (no key) | `kitsune-mcp --modules market` |
-| Testnet, all modules | `kitsune-mcp --profile testnet` |
-| Read-only monitoring | `kitsune-mcp --profile testnet --read-only` |
-| Specific modules | `kitsune-mcp --profile testnet --modules market,vault,strategy` |
+| Mainnet, all modules | `kitsune-mcp --profile mainnet` |
+| Testnet (risk-free) | `kitsune-mcp --profile testnet` |
+| Read-only monitoring | `kitsune-mcp --profile mainnet --read-only` |
+| Specific modules | `kitsune-mcp --profile mainnet --modules market,vault,strategy` |
 
 The server advertises each tool with MCP annotations (`readOnlyHint`, `destructiveHint`) derived from whether
 it writes. With `--read-only`, every write tool is removed. With no `private_key`, every sign-in/on-chain tool
@@ -242,7 +249,7 @@ Skills live in [`agent-skills/`](./agent-skills).
 
 Four layers, mirroring the OKX kit:
 
-1. **Testnet by default** — Pharos Atlantic; no real funds at risk.
+1. **Testnet & read-only options** — the default `mainnet` profile uses real funds; run `--profile testnet` (Pharos Atlantic) for risk-free testing.
 2. **Read-only mode** (`--read-only`) — every write tool is removed from the catalog.
 3. **Smart registration** — with no `private_key`, all sign-in / on-chain tools are hidden; the agent only
    sees what it can actually do.
@@ -251,7 +258,7 @@ Four layers, mirroring the OKX kit:
 
 **Credential safety:** never paste your private key into a chat. Keep it in `~/.kitsune/config.toml` only.
 Everything is signed locally; the AI never sees your key. Because AI behavior is non-deterministic, use a
-dedicated testnet key and only the funds you're willing to risk. **You are responsible for verifying every
+dedicated key and only the funds you're willing to risk. **You are responsible for verifying every
 action; AI can make mistakes.**
 
 ---
@@ -263,8 +270,8 @@ action; AI can make mistakes.**
 | Field | Meaning |
 |---|---|
 | `api_url` | Kitsune REST base (default `https://api.kitsune.finance/api`) |
-| `chain_id` | `688689` (Pharos Atlantic) |
-| `rpc_url` | `https://atlantic.dplabs-internal.com` |
+| `chain_id` | `1672` (Pharos mainnet, default) · `688689` (Atlantic testnet) |
+| `rpc_url` | `https://rpc.pharos.xyz` (mainnet) · `https://atlantic.dplabs-internal.com` (testnet) |
 | `private_key` | self-custody key for SIWE + on-chain (omit for read-only) |
 | `wallet_address` | read-only identity when there's no key |
 | `siwe_domain` | SIWE domain (default `kitsune.finance`) |
@@ -287,7 +294,7 @@ It's open source — audit it. Start in read-only mode or with a dedicated testn
 **Which AI clients work?** Any MCP client — Claude Desktop, Claude Code, Cursor, VS Code, Windsurf, or custom
 agents built on the MCP SDK.
 
-**Is it free?** Yes — MIT licensed. You only need a Pharos Atlantic wallet to transact.
+**Is it free?** Yes — MIT licensed. You only need a Pharos wallet to transact.
 
 ---
 
@@ -317,8 +324,9 @@ Tech: TypeScript (ESM), pnpm workspaces, tsup, vitest, viem, siwe, `@modelcontex
 ## Links
 
 - **Kitsune**: https://kitsune.finance · API: `https://api.kitsune.finance/api`
-- **Pharos**: [docs](https://docs.pharosnetwork.xyz/) · [explorer](https://atlantic.pharosscan.xyz) · chainId `688689`
-- **Contracts (Pharos Atlantic)**: VaultFactory [`0x1518C8FE94AD3567b7b106386e384b4dD82E1Fb6`](https://atlantic.pharosscan.xyz/address/0x1518C8FE94AD3567b7b106386e384b4dD82E1Fb6) · ExecutorRegistry [`0x96afA8e3bad400994Db1E430C682E29aa2fFed6C`](https://atlantic.pharosscan.xyz/address/0x96afA8e3bad400994Db1E430C682E29aa2fFed6C)
+- **Pharos**: [docs](https://docs.pharosnetwork.xyz/) · mainnet [explorer](https://www.pharosscan.xyz) chainId `1672` · testnet [explorer](https://atlantic.pharosscan.xyz) chainId `688689`
+- **Contracts — Pharos Mainnet (default)**: VaultFactory [`0xeEAeec3354dBeE663966b4EDAF6B47bc378Eca90`](https://www.pharosscan.xyz/address/0xeEAeec3354dBeE663966b4EDAF6B47bc378Eca90) · ExecutorRegistry [`0x16672445b12da078AC446D02c96b81a9686674e4`](https://www.pharosscan.xyz/address/0x16672445b12da078AC446D02c96b81a9686674e4)
+- **Contracts — Pharos Atlantic (testnet)**: VaultFactory `0x1518C8FE94AD3567b7b106386e384b4dD82E1Fb6` · ExecutorRegistry `0x96afA8e3bad400994Db1E430C682E29aa2fFed6C`
 - **Model Context Protocol**: https://modelcontextprotocol.io
 - **Built for**: [Pharos "Skill-to-Agent Dual Cascade" Hackathon](https://dorahacks.io/hackathon/pharos-phase1/detail)
 

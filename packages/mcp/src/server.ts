@@ -26,11 +26,11 @@ export function createServer(config: KitsuneConfig): Server {
     chainId: config.chainId,
     signer: account ? { address: account.address, signMessage: (a) => account.signMessage(a) } : undefined,
   });
-  const chain = new KitsuneChain({ rpcUrl: config.rpcUrl, privateKey: config.privateKey as `0x${string}` | undefined });
+  const chain = new KitsuneChain({ rpcUrl: config.rpcUrl, chainId: config.chainId, privateKey: config.privateKey as `0x${string}` | undefined });
   const tools = buildTools(config);
   const toolMap = new Map(tools.map(t => [t.name, t]));
 
-  const server = new Server({ name: 'kitsune-agent-mcp', version: '0.1.0' }, { capabilities: { tools: {} } });
+  const server = new Server({ name: 'kitsune-agent-mcp', version: '0.1.1' }, { capabilities: { tools: {} } });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: buildMcpToolList(config) }));
 
