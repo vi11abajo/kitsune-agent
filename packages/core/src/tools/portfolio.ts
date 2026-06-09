@@ -1,5 +1,5 @@
 import type { ToolSpec } from './types.js';
-import { str, optStr, optNum } from './types.js';
+import { optStr, optNum, addr } from './types.js';
 
 export function registerPortfolioTools(): ToolSpec[] {
   return [
@@ -11,7 +11,7 @@ export function registerPortfolioTools(): ToolSpec[] {
         properties: { owner: { type: 'string', description: 'owner wallet address' } },
         required: ['owner'],
       },
-      handler: async (a, ctx) => ctx.client.authedGet(`/portfolio/${str(a, 'owner')}`),
+      handler: async (a, ctx) => ctx.client.authedGet(`/portfolio/${addr(a, 'owner')}`),
     },
     {
       name: 'portfolio_get_activity', title: 'Get Vault Activity', module: 'portfolio', isWrite: false, auth: 'jwt',
@@ -25,7 +25,7 @@ export function registerPortfolioTools(): ToolSpec[] {
         required: ['vault'],
       },
       handler: async (a, ctx) =>
-        ctx.client.authedGet(`/activity/${str(a, 'vault')}`, { page: optNum(a, 'page'), pageSize: optNum(a, 'pageSize') }),
+        ctx.client.authedGet(`/activity/${addr(a, 'vault')}`, { page: optNum(a, 'page'), pageSize: optNum(a, 'pageSize') }),
     },
     {
       name: 'leaderboard_get', title: 'Get Leaderboard', module: 'portfolio', isWrite: false, auth: 'none',

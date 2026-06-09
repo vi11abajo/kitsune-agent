@@ -35,7 +35,7 @@ export const ADDRESSES_BY_CHAIN: Record<number, ChainAddresses> = {
     vaultFactory: '0xeEAeec3354dBeE663966b4EDAF6B47bc378Eca90',
     executorRegistry: '0x16672445b12da078AC446D02c96b81a9686674e4',
     defaultDexRouter: '0x151CD4688Da2a0F6eec0F1D590C288D0e301ef6B',
-    defaultOracle: '0xA3D35f18edEcc2A0dE239a871B90f233d972c6fe',
+    defaultOracle: '0x46bd32D30cC15F992c4968a4E62CEf0f3c61b875',
     defaultExecutor: '0x049e88506b69324604D076c3E31be0e70Cb059f5',
   },
   // Pharos Atlantic (testnet)
@@ -55,7 +55,11 @@ export function chainFor(chainId: number) {
 }
 
 export function addressesFor(chainId: number): ChainAddresses {
-  return ADDRESSES_BY_CHAIN[chainId] ?? ADDRESSES_BY_CHAIN[DEFAULT_CHAIN_ID];
+  const addresses = ADDRESSES_BY_CHAIN[chainId];
+  if (!addresses) {
+    throw new Error(`Unsupported chain id: ${chainId}. Supported chain ids: ${Object.keys(ADDRESSES_BY_CHAIN).join(', ')}`);
+  }
+  return addresses;
 }
 
 export const DEFAULT_API_URL = 'https://api.kitsune.finance/api';

@@ -1,6 +1,6 @@
 import type { Address } from 'viem';
 import type { ToolSpec } from './types.js';
-import { str, optNum } from './types.js';
+import { str, optNum, seg, addr, num } from './types.js';
 import type { StrategyConfigInput } from '../chain/strategy-config.js';
 
 function strategyConfigSchemaProps() {
@@ -21,13 +21,13 @@ function strategyConfigSchemaProps() {
 
 function buildStrategyConfig(a: Record<string, unknown>): StrategyConfigInput {
   return {
-    baseToken: str(a, 'baseToken') as Address,
-    quoteToken: str(a, 'quoteToken') as Address,
-    allowedExecutor: str(a, 'allowedExecutor') as Address,
-    takeProfitBps: Number(a.takeProfitBps),
-    stopLossBps: Number(a.stopLossBps),
-    maxDcaCount: Number(a.maxDcaCount),
-    maxTradesPerDay: Number(a.maxTradesPerDay),
+    baseToken: addr(a, 'baseToken') as Address,
+    quoteToken: addr(a, 'quoteToken') as Address,
+    allowedExecutor: addr(a, 'allowedExecutor') as Address,
+    takeProfitBps: num(a, 'takeProfitBps'),
+    stopLossBps: num(a, 'stopLossBps'),
+    maxDcaCount: num(a, 'maxDcaCount'),
+    maxTradesPerDay: num(a, 'maxTradesPerDay'),
     active: Boolean(a.active),
     firstBuyAmount: str(a, 'firstBuyAmount'),
     maxPositionSize: str(a, 'maxPositionSize'),
@@ -47,19 +47,19 @@ export function registerStrategyTools(): ToolSpec[] {
       name: 'strategy_list', title: 'List Strategies', module: 'strategy', isWrite: false, auth: 'jwt',
       description: 'List strategies in a vault.',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' } }, required: ['vault'] },
-      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${str(a, 'vault')}/strategies`),
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'vault')}/strategies`),
     },
     {
       name: 'strategy_get', title: 'Get Strategy', module: 'strategy', isWrite: false, auth: 'jwt',
       description: 'Get a single strategy by vault + strategyId.',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
-      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}`),
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}`),
     },
     {
       name: 'strategy_get_position', title: 'Get Strategy Position', module: 'strategy', isWrite: false, auth: 'jwt',
       description: 'Get the open position state for a strategy.',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
-      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}/position`),
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}/position`),
     },
     {
       name: 'strategy_get_trades', title: 'Get Strategy Trades', module: 'strategy', isWrite: false, auth: 'jwt',
@@ -70,7 +70,7 @@ export function registerStrategyTools(): ToolSpec[] {
         required: ['vault', 'strategyId'],
       },
       handler: async (a, ctx) =>
-        ctx.client.authedGet(`/strategies/${str(a, 'vault')}/${str(a, 'strategyId')}/trades`, {
+        ctx.client.authedGet(`/strategies/${addr(a, 'vault')}/${seg(a, 'strategyId')}/trades`, {
           page: optNum(a, 'page'), pageSize: optNum(a, 'pageSize'),
         }),
     },
@@ -78,7 +78,7 @@ export function registerStrategyTools(): ToolSpec[] {
       name: 'strategy_get_metrics', title: 'Get Strategy Metrics', module: 'strategy', isWrite: false, auth: 'jwt',
       description: 'PnL, win rate and Sharpe for a strategy.',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
-      handler: async (a, ctx) => ctx.client.authedGet(`/strategies/${str(a, 'vault')}/${str(a, 'strategyId')}/metrics`),
+      handler: async (a, ctx) => ctx.client.authedGet(`/strategies/${addr(a, 'vault')}/${seg(a, 'strategyId')}/metrics`),
     },
 
     // ---- on-chain writes (signer) ----
@@ -91,7 +91,7 @@ export function registerStrategyTools(): ToolSpec[] {
         required: ['vault', ...CONFIG_REQUIRED],
       },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.createStrategy(str(a, 'vault') as Address, buildStrategyConfig(a));
+        const txHash = await ctx.chain.createStrategy(addr(a, 'vault') as Address, buildStrategyConfig(a));
         return { txHash, status: 'submitted' };
       },
     },
@@ -104,7 +104,7 @@ export function registerStrategyTools(): ToolSpec[] {
         required: ['vault', 'strategyId', ...CONFIG_REQUIRED],
       },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.updateStrategy(str(a, 'vault') as Address, BigInt(str(a, 'strategyId')), buildStrategyConfig(a));
+        const txHash = await ctx.chain.updateStrategy(addr(a, 'vault') as Address, BigInt(str(a, 'strategyId')), buildStrategyConfig(a));
         return { txHash, status: 'submitted' };
       },
     },
@@ -113,7 +113,7 @@ export function registerStrategyTools(): ToolSpec[] {
       description: 'Pause a strategy on-chain so the executor stops trading it. [CAUTION] Sends an on-chain transaction.',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.pauseStrategy(str(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
+        const txHash = await ctx.chain.pauseStrategy(addr(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
         return { txHash, status: 'submitted' };
       },
     },
@@ -122,7 +122,7 @@ export function registerStrategyTools(): ToolSpec[] {
       description: 'Resume a paused strategy on-chain. [CAUTION] Sends an on-chain transaction.',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.resumeStrategy(str(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
+        const txHash = await ctx.chain.resumeStrategy(addr(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
         return { txHash, status: 'submitted' };
       },
     },
@@ -131,7 +131,7 @@ export function registerStrategyTools(): ToolSpec[] {
       description: 'Withdraw the base token from a strategy position back to the vault owner. [CAUTION] Moves funds on-chain.',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.withdrawStrategy(str(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
+        const txHash = await ctx.chain.withdrawStrategy(addr(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
         return { txHash, status: 'submitted' };
       },
     },
@@ -142,7 +142,7 @@ export function registerStrategyTools(): ToolSpec[] {
       description: 'Reset the DCA/grid cycle counters for a strategy (off-chain bookkeeping).',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) =>
-        ctx.client.authedSend('POST', `/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}/restart-cycle`),
+        ctx.client.authedSend('POST', `/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}/restart-cycle`),
     },
     {
       name: 'strategy_set_metadata', title: 'Set Strategy Metadata', module: 'strategy', isWrite: true, auth: 'jwt',
@@ -156,7 +156,7 @@ export function registerStrategyTools(): ToolSpec[] {
         required: ['vault', 'strategyId', 'name'],
       },
       handler: async (a, ctx) =>
-        ctx.client.authedSend('PUT', `/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}/metadata`, {
+        ctx.client.authedSend('PUT', `/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}/metadata`, {
           name: str(a, 'name'),
         }),
     },
@@ -190,7 +190,7 @@ export function registerStrategyTools(): ToolSpec[] {
         const body: Record<string, unknown> = { ...a };
         delete body.vault;
         delete body.strategyId;
-        return ctx.client.authedSend('PUT', `/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}/metadata`, body);
+        return ctx.client.authedSend('PUT', `/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}/metadata`, body);
       },
     },
     {
@@ -198,14 +198,14 @@ export function registerStrategyTools(): ToolSpec[] {
       description: 'Mark a strategy as hidden (off-chain).',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) =>
-        ctx.client.authedSend('POST', `/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}/hide`),
+        ctx.client.authedSend('POST', `/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}/hide`),
     },
     {
       name: 'strategy_restore', title: 'Restore Strategy', module: 'strategy', isWrite: true, auth: 'jwt',
       description: 'Restore a previously hidden strategy (off-chain).',
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) =>
-        ctx.client.authedSend('POST', `/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}/restore`),
+        ctx.client.authedSend('POST', `/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}/restore`),
     },
   ];
 }

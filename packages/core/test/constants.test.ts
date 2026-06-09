@@ -15,6 +15,9 @@ describe('constants', () => {
     expect(addressesFor(1672).vaultFactory).toBe('0xeEAeec3354dBeE663966b4EDAF6B47bc378Eca90');
     expect(addressesFor(688689).vaultFactory).toBe('0x1518C8FE94AD3567b7b106386e384b4dD82E1Fb6');
   });
+  it('throws on unsupported chain ids instead of silently falling back', () => {
+    expect(() => addressesFor(1)).toThrow('Unsupported chain id: 1. Supported chain ids: 1672, 688689');
+  });
   it('still supports Pharos Atlantic testnet', () => {
     expect(PHAROS_ATLANTIC.id).toBe(688689);
     expect(chainFor(688689).id).toBe(688689);

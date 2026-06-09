@@ -14,6 +14,8 @@ export interface ApiClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+const REQUEST_TIMEOUT_MS = 15_000;
+
 function toQueryString(query?: Record<string, string | number | undefined>): string {
   if (!query) return '';
   const entries = Object.entries(query)
@@ -35,6 +37,18 @@ export class KitsuneApiClient {
     return this.opts.apiUrl.replace(/\/$/, '') + path;
   }
 
+  private async request(path: string, init: RequestInit): Promise<Response> {
+    try {
+      return await this.f(this.url(path), { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+    } catch (e) {
+      const name = (e as Error).name;
+      if (name === 'TimeoutError' || name === 'AbortError') {
+        throw new Error(`Kitsune API request timed out after 15s: ${path}`);
+      }
+      throw e;
+    }
+  }
+
   private async parse(res: Response): Promise<unknown> {
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -45,7 +59,7 @@ export class KitsuneApiClient {
   }
 
   async get(path: string, query?: Record<string, string | number | undefined>): Promise<unknown> {
-    return this.parse(await this.f(this.url(path + toQueryString(query)), { method: 'GET' }));
+    return this.parse(await this.request(path + toQueryString(query), { method: 'GET' }));
   }
 
   private async ensureToken(): Promise<string> {
@@ -68,7 +82,7 @@ export class KitsuneApiClient {
     const message = siwe.prepareMessage();
     const signature = await this.opts.signer.signMessage({ message });
     const verified = (await this.parse(
-      await this.f(this.url('/auth/verify'), {
+      await this.request('/auth/verify', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ message, signature }),
@@ -83,7 +97,7 @@ export class KitsuneApiClient {
   async authedGet(path: string, query?: Record<string, string | number | undefined>): Promise<unknown> {
     const token = await this.ensureToken();
     return this.parse(
-      await this.f(this.url(path + toQueryString(query)), {
+      await this.request(path + toQueryString(query), {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       }),
@@ -93,7 +107,7 @@ export class KitsuneApiClient {
   async authedSend(method: 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<unknown> {
     const token = await this.ensureToken();
     return this.parse(
-      await this.f(this.url(path), {
+      await this.request(path, {
         method,
         headers: { Authorization: `Bearer ${token}`, 'content-type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body),

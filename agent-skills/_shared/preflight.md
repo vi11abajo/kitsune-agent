@@ -25,5 +25,16 @@ Create ~/.kitsune/config.toml (mainnet is the default; the default profile uses 
 
 Market data needs no credentials.
 
+**Key hygiene:** the config file holds a private key — restrict it to your user only:
+
+    chmod 600 ~/.kitsune/config.toml
+
 ## Step 3 — Verify
 kitsune market price BTC USDT
+
+## Safety rule — confirm before any [CAUTION] / signer command
+**Before running ANY `[CAUTION]` or signer command** (`vault_create`, `vault_withdraw`,
+`strategy_create`, `strategy_update`, `strategy_pause`, `strategy_resume`, `strategy_withdraw`),
+the agent MUST show the user the exact command it is about to run — including all amounts and
+addresses — and get the user's explicit confirmation. Never send an on-chain transaction or move
+funds without that confirmation.

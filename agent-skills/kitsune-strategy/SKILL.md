@@ -4,11 +4,11 @@ description: "Use this skill to manage Kitsune (Pharos) trading strategies: list
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.1"
+  version: "0.2.2"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.1", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.2", bins: ["kitsune"] }
 ---
 
 # Kitsune Strategies
@@ -28,7 +28,7 @@ See ../_shared/preflight.md first. On-chain writes need a `private_key` and send
 | # | Command | Description |
 |---|---------|-------------|
 | 6 | `kitsune call strategy_create --args '{"vault":"0x..","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":1000,"maxDcaCount":5,"maxTradesPerDay":3,"active":true,"firstBuyAmount":"1000000","maxPositionSize":"5000000","dcaMultiplier":"1500000000000000000"}'` | Create a strategy |
-| 7 | `kitsune call strategy_update --args '{"vault":"0x..","strategyId":"3", ...same config fields...}'` | Update config |
+| 7 | `kitsune call strategy_update --args '{"vault":"0x..","strategyId":"3","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":1000,"maxDcaCount":5,"maxTradesPerDay":3,"active":true,"firstBuyAmount":"1000000","maxPositionSize":"5000000","dcaMultiplier":"1500000000000000000"}'` | Update config (all config fields required) |
 | 8 | `kitsune call strategy_pause --vault <addr> --strategyId <id>` | Pause |
 | 9 | `kitsune call strategy_resume --vault <addr> --strategyId <id>` | Resume |
 | 10 | `kitsune call strategy_withdraw --vault <addr> --strategyId <id>` | Withdraw position |

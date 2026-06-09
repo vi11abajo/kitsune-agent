@@ -12,7 +12,7 @@ export function registerMarketTools(): ToolSpec[] {
         required: ['base', 'quote'],
       },
       handler: async (a, ctx) =>
-        ctx.client.get(`/prices/${str(a, 'base').toUpperCase()}/${str(a, 'quote').toUpperCase()}`),
+        ctx.client.get(`/prices/${encodeURIComponent(str(a, 'base').toUpperCase())}/${encodeURIComponent(str(a, 'quote').toUpperCase())}`),
     },
     {
       name: 'market_get_candles', title: 'Get Candles', module: 'market', isWrite: false, auth: 'none',
@@ -26,7 +26,7 @@ export function registerMarketTools(): ToolSpec[] {
         required: ['base', 'quote'],
       },
       handler: async (a, ctx) =>
-        ctx.client.get(`/prices/${str(a, 'base').toUpperCase()}/${str(a, 'quote').toUpperCase()}/candles`, {
+        ctx.client.get(`/prices/${encodeURIComponent(str(a, 'base').toUpperCase())}/${encodeURIComponent(str(a, 'quote').toUpperCase())}/candles`, {
           interval: optStr(a, 'interval'),
           limit: optNum(a, 'limit'),
         }),
@@ -40,7 +40,7 @@ export function registerMarketTools(): ToolSpec[] {
         required: ['base', 'quote'],
       },
       handler: async (a, ctx) =>
-        ctx.client.get(`/prices/${str(a, 'base').toUpperCase()}/${str(a, 'quote').toUpperCase()}/indicators`),
+        ctx.client.get(`/prices/${encodeURIComponent(str(a, 'base').toUpperCase())}/${encodeURIComponent(str(a, 'quote').toUpperCase())}/indicators`),
     },
     {
       name: 'market_batch_prices', title: 'Batch Prices', module: 'market', isWrite: false, auth: 'none',

@@ -1,5 +1,5 @@
 import type { ToolSpec } from './types.js';
-import { str, optStr, optNum } from './types.js';
+import { str, optStr, optNum, seg } from './types.js';
 
 export function registerMarketplaceTools(): ToolSpec[] {
   return [
@@ -24,7 +24,7 @@ export function registerMarketplaceTools(): ToolSpec[] {
       name: 'marketplace_get', title: 'Get Marketplace Strategy', module: 'marketplace', isWrite: false, auth: 'none',
       description: 'Get a marketplace strategy by its public id.',
       inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'public strategy id' } }, required: ['id'] },
-      handler: async (a, ctx) => ctx.client.get(`/marketplace/${str(a, 'id')}`),
+      handler: async (a, ctx) => ctx.client.get(`/marketplace/${seg(a, 'id')}`),
     },
     {
       name: 'marketplace_share', title: 'Share To Marketplace', module: 'marketplace', isWrite: true, auth: 'jwt',
@@ -67,13 +67,13 @@ export function registerMarketplaceTools(): ToolSpec[] {
         required: ['id'],
       },
       handler: async (a, ctx) =>
-        ctx.client.authedSend('POST', `/marketplace/${str(a, 'id')}/copy`),
+        ctx.client.authedSend('POST', `/marketplace/${seg(a, 'id')}/copy`),
     },
     {
       name: 'marketplace_delist', title: 'Delist Marketplace Strategy', module: 'marketplace', isWrite: true, auth: 'jwt',
       description: 'Delist one of your strategies from the marketplace.',
       inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'public strategy id' } }, required: ['id'] },
-      handler: async (a, ctx) => ctx.client.authedSend('POST', `/marketplace/${str(a, 'id')}/delist`),
+      handler: async (a, ctx) => ctx.client.authedSend('POST', `/marketplace/${seg(a, 'id')}/delist`),
     },
   ];
 }

@@ -1,5 +1,5 @@
 import type { ToolSpec } from './types.js';
-import { str, optStr, optNum } from './types.js';
+import { optStr, optNum, addr } from './types.js';
 
 export function registerExecutorTools(): ToolSpec[] {
   return [
@@ -28,7 +28,7 @@ export function registerExecutorTools(): ToolSpec[] {
         required: ['address'],
       },
       handler: async (a, ctx) =>
-        ctx.client.authedGet(`/executors/${str(a, 'address')}`, { chainId: optNum(a, 'chainId') }),
+        ctx.client.authedGet(`/executors/${addr(a, 'address')}`, { chainId: optNum(a, 'chainId') }),
     },
     {
       name: 'executor_get_jobs', title: 'Get Executor Jobs', module: 'executor', isWrite: false, auth: 'jwt',
@@ -43,7 +43,7 @@ export function registerExecutorTools(): ToolSpec[] {
         required: ['address'],
       },
       handler: async (a, ctx) =>
-        ctx.client.authedGet(`/executors/${str(a, 'address')}/jobs`, {
+        ctx.client.authedGet(`/executors/${addr(a, 'address')}/jobs`, {
           status: optStr(a, 'status'),
           page: optNum(a, 'page'),
           pageSize: optNum(a, 'pageSize'),

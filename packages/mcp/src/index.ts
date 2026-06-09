@@ -17,6 +17,7 @@ async function main() {
       path: { type: 'string' },
       'rate-limit': { type: 'string' },
       'max-sessions': { type: 'string' },
+      'allowed-origins': { type: 'string' },
       'docs-url': { type: 'string' },
     },
   });
@@ -29,6 +30,7 @@ async function main() {
 
   // HTTP mode: a public, read-only server reachable over the network (no key, no install for clients).
   if (values.http) {
+    const allowedOriginsRaw = values['allowed-origins'] ?? process.env.KITSUNE_MCP_ALLOWED_ORIGINS;
     await startHttpServer(config, {
       host: values.host ?? '127.0.0.1',
       port: values.port ? parseInt(values.port, 10) : 8788,
@@ -36,6 +38,7 @@ async function main() {
       rateLimitPerMin: values['rate-limit'] ? parseInt(values['rate-limit'], 10) : 60,
       maxSessions: values['max-sessions'] ? parseInt(values['max-sessions'], 10) : 500,
       sessionTtlMs: 10 * 60_000,
+      allowedOrigins: allowedOriginsRaw ? allowedOriginsRaw.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
       docsUrl: values['docs-url'],
     });
     return;

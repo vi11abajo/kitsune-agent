@@ -29,11 +29,18 @@ const CONFIG_HINTS: Record<string, string> = {
 
 export const SUPPORTED_CLIENTS = Object.keys(CONFIG_HINTS);
 
+function assertSupportedClient(client: string): void {
+  if (!SUPPORTED_CLIENTS.includes(client)) {
+    throw new Error(`Unknown client: ${client}. Supported clients: ${SUPPORTED_CLIENTS.join(', ')}`);
+  }
+}
+
 /**
  * Local full server (stdio): all tools, self-custody (signs locally with your key).
  * Pass npx=true to run without a global install via `npx @kitsune-ai/agent-mcp`.
  */
 export function buildClientRegistration(client: string, profile = 'mainnet', npx = false): SetupResult {
+  assertSupportedClient(client);
   const server = npx
     ? { command: 'npx', args: ['-y', '@kitsune-ai/agent-mcp', '--profile', profile] }
     : { command: 'kitsune-mcp', args: ['--profile', profile] };
@@ -57,6 +64,7 @@ export function buildClientRegistration(client: string, profile = 'mainnet', npx
  * URL-capable clients connect directly; stdio-only clients bridge with `mcp-remote`.
  */
 export function buildRemoteRegistration(client: string, url = DEFAULT_REMOTE_URL): RemoteSetupResult {
+  assertSupportedClient(client);
   const urlConfig = { mcpServers: { 'kitsune-remote': { url } } };
   const bridge = { mcpServers: { 'kitsune-remote': { command: 'npx', args: ['-y', 'mcp-remote', url] } } };
   const note = 'Public READ-ONLY Kitsune MCP — no install, no key (market data, leaderboard, marketplace browse).';

@@ -42,6 +42,26 @@ export function str(args: Record<string, unknown>, key: string): string {
   return v;
 }
 
+/** Required string argument, URL-encoded for safe interpolation into an API path segment. */
+export function seg(args: Record<string, unknown>, key: string): string {
+  return encodeURIComponent(str(args, key));
+}
+
+/** Required EVM address argument; validated (0x + 40 hex chars) so it is safe in paths and on-chain calls. */
+export function addr(args: Record<string, unknown>, key: string): string {
+  const v = str(args, key);
+  if (!/^0x[0-9a-fA-F]{40}$/.test(v)) throw new Error(`Invalid address argument: ${key}`);
+  return v;
+}
+
+/** Required finite number argument (accepts numeric strings); throws instead of letting NaN flow downstream. */
+export function num(args: Record<string, unknown>, key: string): number {
+  const v = args[key];
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+  if (!Number.isFinite(n)) throw new Error(`Missing or invalid number argument: ${key}`);
+  return n;
+}
+
 export function optStr(args: Record<string, unknown>, key: string): string | undefined {
   const v = args[key];
   return typeof v === 'string' ? v : undefined;

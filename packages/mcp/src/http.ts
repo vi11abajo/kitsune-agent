@@ -12,30 +12,53 @@ export interface HttpServerOptions {
   rateLimitPerMin: number; // per client IP
   maxSessions: number;
   sessionTtlMs: number;
+  /** Browser origins (besides localhost) allowed to call the server. Non-browser clients send no Origin and are unaffected. */
+  allowedOrigins?: string[];
   /** Where to send humans who open the bare domain in a browser. */
   docsUrl?: string;
 }
 
 const DEFAULT_DOCS_URL = 'https://kitsune.finance/agents';
+const MAX_SESSIONS_PER_IP = 8;
+const MAX_TRACKED_IPS = 10_000;
+const LOCALHOST_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
 
 interface Session {
   transport: StreamableHTTPServerTransport;
   close: () => Promise<void>;
   lastSeen: number;
+  ip: string;
 }
 
-function clientIp(req: IncomingMessage): string {
-  const cf = req.headers['cf-connecting-ip'];
-  if (typeof cf === 'string' && cf) return cf;
+/** Loopback / RFC1918 peers only — anything else may forge proxy headers. */
+export function isPrivateOrLoopback(ip: string): boolean {
+  const v4 = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+  if (ip === '::1') return true;
+  return /^127\./.test(v4) || /^10\./.test(v4) || /^192\.168\./.test(v4) || /^172\.(1[6-9]|2\d|3[01])\./.test(v4);
+}
+
+export function clientIp(req: IncomingMessage): string {
+  const peer = req.socket.remoteAddress ?? 'unknown';
+  // Only trust x-forwarded-for when the direct peer is our own proxy (loopback/private),
+  // and take the LAST entry — the one appended by that proxy. Clients can forge the rest.
   const xff = req.headers['x-forwarded-for'];
-  if (typeof xff === 'string' && xff) return xff.split(',')[0].trim();
-  return req.socket.remoteAddress ?? 'unknown';
+  if (typeof xff === 'string' && xff && isPrivateOrLoopback(peer)) {
+    const parts = xff.split(',');
+    const last = parts[parts.length - 1].trim();
+    if (last) return last;
+  }
+  return peer;
 }
 
-function makeRateLimiter(maxPerMin: number) {
+export function makeRateLimiter(maxPerMin: number) {
   const hits = new Map<string, { count: number; resetAt: number }>();
   return (ip: string): boolean => {
     const now = Date.now();
+    if (hits.size > MAX_TRACKED_IPS) {
+      for (const [k, v] of hits) {
+        if (now > v.resetAt) hits.delete(k);
+      }
+    }
     const e = hits.get(ip);
     if (!e || now > e.resetAt) {
       hits.set(ip, { count: 1, resetAt: now + 60_000 });
@@ -47,22 +70,32 @@ function makeRateLimiter(maxPerMin: number) {
   };
 }
 
+class HttpError extends Error {
+  constructor(public statusCode: number, message: string) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
+
 function readJsonBody(req: IncomingMessage, limitBytes = 1_000_000): Promise<unknown> {
   return new Promise((resolve, reject) => {
     let raw = '';
     req.on('data', (chunk) => {
       raw += chunk;
       if (raw.length > limitBytes) {
-        reject(new Error('Payload too large'));
-        req.destroy();
+        reject(new HttpError(413, 'Payload too large'));
+        // Stop consuming instead of destroying the socket so the 413 response can still be delivered;
+        // Node closes the connection after responding to a request that was not fully read.
+        req.removeAllListeners('data');
+        req.pause();
       }
     });
     req.on('end', () => {
       if (!raw) return resolve(undefined);
       try {
         resolve(JSON.parse(raw));
-      } catch (e) {
-        reject(e);
+      } catch {
+        reject(new HttpError(400, 'Malformed JSON body'));
       }
     });
     req.on('error', reject);
@@ -83,13 +116,22 @@ export async function startHttpServer(config: KitsuneConfig, opts: HttpServerOpt
   const publicConfig: KitsuneConfig = { ...config, readOnly: true, hasSigner: false, privateKey: undefined };
 
   const sessions = new Map<string, Session>();
+  const sessionsPerIp = new Map<string, number>();
   const allow = makeRateLimiter(opts.rateLimitPerMin);
+  const allowedOrigins = opts.allowedOrigins ?? [];
+
+  function releaseIp(ip: string): void {
+    const n = sessionsPerIp.get(ip) ?? 0;
+    if (n <= 1) sessionsPerIp.delete(ip);
+    else sessionsPerIp.set(ip, n - 1);
+  }
 
   const sweep = setInterval(() => {
     const now = Date.now();
     for (const [sid, s] of sessions) {
       if (now - s.lastSeen > opts.sessionTtlMs) {
         sessions.delete(sid);
+        releaseIp(s.ip);
         void s.close();
       }
     }
@@ -104,6 +146,14 @@ export async function startHttpServer(config: KitsuneConfig, opts: HttpServerOpt
   }
 
   const http = createHttpServer(async (req, res) => {
+    // DNS-rebinding protection: browser requests carry an Origin header — only
+    // localhost origins and the explicit allowlist may pass. Non-browser MCP
+    // clients send no Origin and are unaffected.
+    const origin = req.headers.origin;
+    if (typeof origin === 'string' && origin && !LOCALHOST_ORIGIN.test(origin) && !allowedOrigins.includes(origin)) {
+      sendJson(res, 403, { error: 'Origin not allowed' });
+      return;
+    }
     setCors(res);
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -128,7 +178,8 @@ export async function startHttpServer(config: KitsuneConfig, opts: HttpServerOpt
       return;
     }
 
-    if (!allow(clientIp(req))) {
+    const ip = clientIp(req);
+    if (!allow(ip)) {
       sendJson(res, 429, { error: 'Rate limit exceeded' });
       return;
     }
@@ -176,12 +227,17 @@ export async function startHttpServer(config: KitsuneConfig, opts: HttpServerOpt
         sendJson(res, 503, { error: 'Server busy: too many sessions, try again later' });
         return;
       }
+      if ((sessionsPerIp.get(ip) ?? 0) >= MAX_SESSIONS_PER_IP) {
+        sendJson(res, 429, { error: 'Too many concurrent sessions from this IP, try again later' });
+        return;
+      }
 
       const mcp = createMcpServer(publicConfig);
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         enableJsonResponse: true,
         onsessioninitialized: (sid) => {
+          sessionsPerIp.set(ip, (sessionsPerIp.get(ip) ?? 0) + 1);
           sessions.set(sid, {
             transport,
             close: async () => {
@@ -189,20 +245,24 @@ export async function startHttpServer(config: KitsuneConfig, opts: HttpServerOpt
               try { await mcp.close(); } catch { /* ignore */ }
             },
             lastSeen: Date.now(),
+            ip,
           });
         },
       });
       transport.onclose = () => {
         const sid = transport.sessionId;
         if (sid && sessions.has(sid)) {
+          const s = sessions.get(sid)!;
           sessions.delete(sid);
+          releaseIp(s.ip);
           void mcp.close();
         }
       };
       await mcp.connect(transport);
       await transport.handleRequest(req, res, body);
     } catch (e) {
-      if (!res.headersSent) sendJson(res, 500, { error: (e as Error).message });
+      const status = e instanceof HttpError ? e.statusCode : 500;
+      if (!res.headersSent) sendJson(res, status, { error: (e as Error).message });
     }
   });
 

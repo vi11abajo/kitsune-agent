@@ -33,7 +33,7 @@ It ships as **three standalone pieces around one shared core**, mirroring the OK
 | **`@kitsune-ai/agent-cli`** (`kitsune`) | A terminal CLI. Works with shell pipes, cron, and scripts — no AI client needed. Also the runtime behind the Skills. |
 | **`@kitsune-ai/agent-core`** | The shared library: config, REST client (SIWE/JWT), viem chain layer, and the single tool catalog used by both the MCP server and the CLI. |
 
-Plus **5 plug-and-play Skills** for clients that support the Agent Skills protocol.
+Plus **9 plug-and-play Skills** for clients that support the Agent Skills protocol.
 
 ---
 
@@ -148,8 +148,8 @@ Print these for your client with `kitsune setup --client <name> --remote`.
 **Option B — Local, full power (self-custody).** Run the server on your machine to manage vaults, strategies and trades — your key signs locally and never leaves the box:
 
 ```bash
-kitsune-mcp setup --client cursor          # or: claude-desktop | claude-code | vscode | windsurf
-kitsune-mcp setup --client cursor --npx    # registration that runs via npx (no global install)
+kitsune setup --client cursor          # or: claude-desktop | claude-code | vscode | windsurf
+kitsune setup --client cursor --npx    # registration that runs via npx (no global install)
 ```
 
 This prints the MCP registration to drop into your client config:
@@ -376,7 +376,7 @@ Workspace layout:
 packages/core   @kitsune-ai/agent-core   shared: config, API client, viem chain, tool catalog
 packages/mcp    @kitsune-ai/agent-mcp     stdio MCP server   (bin: kitsune-mcp)
 packages/cli    @kitsune-ai/agent-cli     terminal CLI       (bin: kitsune)
-agent-skills/   5 SKILL.md + shared preflight
+agent-skills/   9 SKILL.md + shared preflight
 ```
 
 Tech: TypeScript (ESM), pnpm workspaces, tsup, vitest, viem, siwe, `@modelcontextprotocol/sdk`. Node ≥18.

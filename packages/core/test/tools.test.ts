@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { allToolSpecs, buildTools } from '../src/tools/index.js';
 import { MODULES } from '../src/constants.js';
+import { seg, addr, num } from '../src/tools/types.js';
 import type { ToolContext } from '../src/tools/types.js';
 
 function ctxWith(over: Partial<{ client: any; chain: any }>): ToolContext {
@@ -8,6 +9,10 @@ function ctxWith(over: Partial<{ client: any; chain: any }>): ToolContext {
 }
 
 const find = (name: string) => allToolSpecs().find(t => t.name === name)!;
+
+const OWNER = '0x1111111111111111111111111111111111111111';
+const VAULT = '0x2222222222222222222222222222222222222222';
+const EXECUTOR = '0x3333333333333333333333333333333333333333';
 
 describe('tool catalog', () => {
   it('includes representative tools from every module', () => {
@@ -54,20 +59,20 @@ describe('tool catalog', () => {
 
   it('vault_list uses authedGet', async () => {
     const client = { authedGet: vi.fn().mockResolvedValue({ vaults: [] }) };
-    await find('vault_list').handler({ owner: '0xowner' }, ctxWith({ client }));
-    expect(client.authedGet).toHaveBeenCalledWith('/vaults/0xowner');
+    await find('vault_list').handler({ owner: OWNER }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith(`/vaults/${OWNER}`);
   });
 
   it('strategy_get_metrics uses authedGet with the strategies path', async () => {
     const client = { authedGet: vi.fn().mockResolvedValue({}) };
-    await find('strategy_get_metrics').handler({ vault: '0xv', strategyId: '3' }, ctxWith({ client }));
-    expect(client.authedGet).toHaveBeenCalledWith('/strategies/0xv/3/metrics');
+    await find('strategy_get_metrics').handler({ vault: VAULT, strategyId: '3' }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith(`/strategies/${VAULT}/3/metrics`);
   });
 
   it('portfolio_get uses authedGet', async () => {
     const client = { authedGet: vi.fn().mockResolvedValue({}) };
-    await find('portfolio_get').handler({ owner: '0xo' }, ctxWith({ client }));
-    expect(client.authedGet).toHaveBeenCalledWith('/portfolio/0xo');
+    await find('portfolio_get').handler({ owner: OWNER }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith(`/portfolio/${OWNER}`);
   });
 
   it('marketplace_list uses public get with pair/sort params', async () => {
@@ -96,16 +101,27 @@ describe('tool catalog', () => {
   it('strategy_create calls chain.createStrategy and returns a tx result', async () => {
     const chain = { createStrategy: vi.fn().mockResolvedValue('0xabc') };
     const out = await find('strategy_create').handler({
-      vault: '0xv',
-      baseToken: '0x10', quoteToken: '0x20', allowedExecutor: '0x30',
+      vault: VAULT,
+      baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
       takeProfitBps: 500, stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
       firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
     }, ctxWith({ chain }));
     expect(chain.createStrategy).toHaveBeenCalledTimes(1);
     const [vaultArg, cfgArg] = chain.createStrategy.mock.calls[0];
-    expect(vaultArg).toBe('0xv');
+    expect(vaultArg).toBe(VAULT);
     expect(cfgArg.dcaMultiplier).toBe('1500000000000000000');
     expect(out).toEqual({ txHash: '0xabc', status: 'submitted' });
+  });
+
+  it('strategy_create rejects a non-numeric takeProfitBps instead of passing NaN on-chain', async () => {
+    const chain = { createStrategy: vi.fn() };
+    await expect(find('strategy_create').handler({
+      vault: VAULT,
+      baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
+      takeProfitBps: 'oops', stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
+      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
+    }, ctxWith({ chain }))).rejects.toThrow(/takeProfitBps/);
+    expect(chain.createStrategy).not.toHaveBeenCalled();
   });
 
   it('marketplace_copy uses authedSend with the copy path (no body)', async () => {
@@ -122,19 +138,70 @@ describe('tool catalog', () => {
 
   it('executor_get_jobs uses authedGet with pagination + status', async () => {
     const client = { authedGet: vi.fn().mockResolvedValue({}) };
-    await find('executor_get_jobs').handler({ address: '0xe', status: 'CONFIRMED', page: 2, pageSize: 50 }, ctxWith({ client }));
-    expect(client.authedGet).toHaveBeenCalledWith('/executors/0xe/jobs', { status: 'CONFIRMED', page: 2, pageSize: 50, chainId: undefined });
+    await find('executor_get_jobs').handler({ address: EXECUTOR, status: 'CONFIRMED', page: 2, pageSize: 50 }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith(`/executors/${EXECUTOR}/jobs`, { status: 'CONFIRMED', page: 2, pageSize: 50, chainId: undefined });
   });
 
   it('strategy_set_config PUTs metadata without vault/strategyId in the body', async () => {
     const client = { authedSend: vi.fn().mockResolvedValue({}) };
-    await find('strategy_set_config').handler({ vault: '0xv', strategyId: '3', strategyType: 'grid', gridCount: 20 }, ctxWith({ client }));
-    expect(client.authedSend).toHaveBeenCalledWith('PUT', '/vaults/0xv/strategies/3/metadata', { strategyType: 'grid', gridCount: 20 });
+    await find('strategy_set_config').handler({ vault: VAULT, strategyId: '3', strategyType: 'grid', gridCount: 20 }, ctxWith({ client }));
+    expect(client.authedSend).toHaveBeenCalledWith('PUT', `/vaults/${VAULT}/strategies/3/metadata`, { strategyType: 'grid', gridCount: 20 });
   });
 
   it('notifications_set_preferences PUTs the args as body', async () => {
     const client = { authedSend: vi.fn().mockResolvedValue({}) };
     await find('notifications_set_preferences').handler({ notifyBuy: false }, ctxWith({ client }));
     expect(client.authedSend).toHaveBeenCalledWith('PUT', '/notifications/preferences', { notifyBuy: false });
+  });
+});
+
+describe('path argument helpers', () => {
+  it('seg URL-encodes path traversal attempts', () => {
+    expect(seg({ id: '../auth/nonce' }, 'id')).toBe('..%2Fauth%2Fnonce');
+    expect(seg({ id: 'a?b=c#d' }, 'id')).toBe('a%3Fb%3Dc%23d');
+  });
+
+  it('addr accepts a valid EVM address as-is', () => {
+    expect(addr({ owner: OWNER }, 'owner')).toBe(OWNER);
+  });
+
+  it('addr rejects malformed addresses naming the argument', () => {
+    expect(() => addr({ owner: '../auth/nonce' }, 'owner')).toThrow('Invalid address argument: owner');
+    expect(() => addr({ owner: '0x123' }, 'owner')).toThrow('Invalid address argument: owner');
+    expect(() => addr({}, 'owner')).toThrow('Missing or invalid string argument: owner');
+  });
+
+  it('num rejects NaN and non-finite values naming the argument', () => {
+    expect(num({ bps: 500 }, 'bps')).toBe(500);
+    expect(num({ bps: '500' }, 'bps')).toBe(500);
+    expect(() => num({ bps: 'abc' }, 'bps')).toThrow('Missing or invalid number argument: bps');
+    expect(() => num({ bps: Infinity }, 'bps')).toThrow('Missing or invalid number argument: bps');
+    expect(() => num({}, 'bps')).toThrow('Missing or invalid number argument: bps');
+  });
+});
+
+describe('path injection hardening', () => {
+  it('vault_list rejects a path-traversing owner before any request is made', async () => {
+    const client = { authedGet: vi.fn() };
+    await expect(find('vault_list').handler({ owner: '../auth/nonce' }, ctxWith({ client }))).rejects.toThrow('Invalid address argument: owner');
+    expect(client.authedGet).not.toHaveBeenCalled();
+  });
+
+  it('marketplace_get encodes the id so it cannot traverse paths', async () => {
+    const client = { get: vi.fn().mockResolvedValue({}) };
+    await find('marketplace_get').handler({ id: '../auth/nonce' }, ctxWith({ client }));
+    expect(client.get).toHaveBeenCalledWith('/marketplace/..%2Fauth%2Fnonce');
+  });
+
+  it('strategy_get encodes the strategyId path segment', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue({}) };
+    await find('strategy_get').handler({ vault: VAULT, strategyId: '3/../../x' }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith(`/vaults/${VAULT}/strategies/3%2F..%2F..%2Fx`);
+  });
+
+  it('market_get_price encodes base/quote path segments', async () => {
+    const client = { get: vi.fn().mockResolvedValue({}) };
+    await find('market_get_price').handler({ base: '../auth', quote: 'usdt' }, ctxWith({ client }));
+    expect(client.get).toHaveBeenCalledWith('/prices/..%2FAUTH/USDT');
   });
 });

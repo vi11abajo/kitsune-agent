@@ -1,6 +1,6 @@
 import type { Address } from 'viem';
 import type { ToolSpec } from './types.js';
-import { str, optStr } from './types.js';
+import { str, optStr, addr } from './types.js';
 
 export function registerVaultTools(): ToolSpec[] {
   return [
@@ -12,7 +12,7 @@ export function registerVaultTools(): ToolSpec[] {
         properties: { owner: { type: 'string', description: 'owner wallet address' } },
         required: ['owner'],
       },
-      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${str(a, 'owner')}`),
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'owner')}`),
     },
     {
       name: 'vault_get_balances', title: 'Vault Balances', module: 'vault', isWrite: false, auth: 'jwt',
@@ -22,7 +22,7 @@ export function registerVaultTools(): ToolSpec[] {
         properties: { vault: { type: 'string', description: 'vault address' } },
         required: ['vault'],
       },
-      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${str(a, 'vault')}/balances`),
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'vault')}/balances`),
     },
     {
       name: 'vault_get_allocations', title: 'Vault Allocations', module: 'vault', isWrite: false, auth: 'jwt',
@@ -32,7 +32,7 @@ export function registerVaultTools(): ToolSpec[] {
         properties: { vault: { type: 'string', description: 'vault address' } },
         required: ['vault'],
       },
-      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${str(a, 'vault')}/allocations`),
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'vault')}/allocations`),
     },
     {
       name: 'vault_create', title: 'Create Vault', module: 'vault', isWrite: true, auth: 'signer',
@@ -62,7 +62,7 @@ export function registerVaultTools(): ToolSpec[] {
         required: ['vault', 'token', 'amount'],
       },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.withdraw(str(a, 'vault') as Address, str(a, 'token') as Address, BigInt(str(a, 'amount')));
+        const txHash = await ctx.chain.withdraw(addr(a, 'vault') as Address, addr(a, 'token') as Address, BigInt(str(a, 'amount')));
         return { txHash, status: 'submitted' };
       },
     },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildClientRegistration, SUPPORTED_CLIENTS } from '../src/setup.js';
+import { buildClientRegistration, buildRemoteRegistration, SUPPORTED_CLIENTS } from '../src/setup.js';
 
 describe('cli setup', () => {
   it('registers kitsune-mcp for a known client', () => {
@@ -17,5 +17,11 @@ describe('cli setup', () => {
   it('lists supported clients', () => {
     expect(SUPPORTED_CLIENTS).toContain('claude-desktop');
     expect(SUPPORTED_CLIENTS).toContain('vscode');
+  });
+
+  it('rejects an unknown client and names the supported ones', () => {
+    expect(() => buildClientRegistration('cursr')).toThrow(/Unknown client: cursr/);
+    expect(() => buildClientRegistration('cursr')).toThrow(new RegExp(SUPPORTED_CLIENTS.join(', ')));
+    expect(() => buildRemoteRegistration('sublime')).toThrow(/Unknown client: sublime/);
   });
 });

@@ -7,7 +7,7 @@ default_profile = "testnet"
 api_url     = "https://api.kitsune.finance/api"
 chain_id    = 688689
 rpc_url     = "https://atlantic.dplabs-internal.com"
-private_key = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+private_key = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d" # well-known Anvil/Hardhat test key #1 — not a secret
 [profiles.readonly]
 api_url        = "https://api.kitsune.finance/api"
 wallet_address = "0xabc0000000000000000000000000000000000001"
