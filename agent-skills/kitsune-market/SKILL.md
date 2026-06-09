@@ -13,7 +13,7 @@ metadata:
 
 # Kitsune Market Data
 
-Read-only. See ../_shared/preflight.md first.
+Read-only. See [preflight](references/preflight.md) first.
 
 | # | Command | Description |
 |---|---------|-------------|
@@ -29,3 +29,23 @@ Read-only. See ../_shared/preflight.md first.
 | 6 | `kitsune call market_get_dodo_route --args '{"fromToken":"0x..","toToken":"0x..","fromAmount":"1000000"}'` | DODO swap route / quote |
 
 Add `--json` for machine-readable output.
+
+## Examples
+
+User asks: "What's the price of BTC right now?"
+
+    kitsune market price BTC USDT
+
+Returns the current price plus 24h stats (last price, 24h change %, high/low, volume).
+
+User asks: "Show me the last 50 hourly candles for WPROS/USDC."
+
+    kitsune market candles WPROS USDC --interval 1h --limit 50
+
+Returns an array of OHLCV candles, e.g. `[{ "time": 1700000000, "open": 0.71, "high": 0.73, "low": 0.70, "close": 0.72, "volume": 12345 }, ...]`.
+
+User asks: "Is BTC overbought? Check the indicators."
+
+    kitsune market indicators BTC USDT
+
+Returns the current technical indicators (RSI, MACD, EMA, Bollinger Bands) so the agent can read the RSI value against the 70/30 thresholds.

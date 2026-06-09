@@ -13,7 +13,7 @@ metadata:
 
 # Kitsune Marketplace
 
-See ../_shared/preflight.md first. Browsing is public; sharing/copying/delisting needs sign-in.
+See [preflight](references/preflight.md) first. Browsing is public; sharing/copying/delisting needs sign-in.
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|
@@ -24,3 +24,23 @@ See ../_shared/preflight.md first. Browsing is public; sharing/copying/delisting
 | 5 | `kitsune call marketplace_delist --id <publicId>` | jwt | Delist your strategy |
 
 Add `--json` for machine-readable output.
+
+## Examples
+
+User asks: "Show me the most popular shared strategies."
+
+    kitsune call marketplace_list --sort popular
+
+Returns the public listing of shared strategies, e.g. `[{ "publicId": "abc123", "name": "...", "tradingPair": "WPROS/USDC", "copies": 87, "rating": 4.5 }, ...]`.
+
+User asks: "Open the marketplace strategy abc123."
+
+    kitsune call marketplace_get --id abc123
+
+Returns the full marketplace strategy detail for that public id (config, pair, copy count, rating).
+
+User asks: "Copy strategy abc123 into my account."
+
+    kitsune call marketplace_copy --id abc123
+
+Records the copy (increments the copy count) and returns the updated listing reference.

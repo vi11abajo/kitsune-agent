@@ -13,7 +13,7 @@ metadata:
 
 # Kitsune Fees
 
-See ../_shared/preflight.md first. All reads need sign-in.
+See [preflight](references/preflight.md) first. All reads need sign-in.
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|
@@ -21,3 +21,17 @@ See ../_shared/preflight.md first. All reads need sign-in.
 | 2 | `kitsune call fees_get_history` | jwt | Daily-aggregated fee earnings (optional `--chainId`) |
 
 Add `--json` for machine-readable output.
+
+## Examples
+
+User asks: "How much have I earned in fees so far?"
+
+    kitsune call fees_get_dashboard
+
+Returns your creator + referrer earned/claimed totals plus your referral link, e.g. `{ "creatorEarned": "...", "creatorClaimed": "...", "referrerEarned": "...", "referralCount": 12, "referralLink": "https://kitsune.finance/?ref=AB12CD34" }`.
+
+User asks: "Show my daily fee earnings history on mainnet."
+
+    kitsune call fees_get_history --chainId 1672
+
+Returns the daily-aggregated fee earnings, e.g. `[{ "date": "2026-06-09", "amount": "..." }, { "date": "2026-06-10", "amount": "..." }, ...]`.

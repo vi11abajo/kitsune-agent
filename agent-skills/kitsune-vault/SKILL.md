@@ -13,7 +13,7 @@ metadata:
 
 # Kitsune Vaults
 
-See ../_shared/preflight.md first. Reads need sign-in; writes need a `private_key` and send on-chain transactions on Pharos (mainnet by default; use `--profile testnet` for Atlantic).
+See [preflight](references/preflight.md) first. Reads need sign-in; writes need a `private_key` and send on-chain transactions on Pharos (mainnet by default; use `--profile testnet` for Atlantic).
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|
@@ -24,3 +24,25 @@ See ../_shared/preflight.md first. Reads need sign-in; writes need a `private_ke
 | 5 | `kitsune call vault_withdraw --args '{"vault":"0x..","token":"0x..","amount":"1000000"}'` | signer | **[CAUTION]** Withdraw tokens on-chain |
 
 Add `--json` for machine-readable output.
+
+## Examples
+
+User asks: "List the vaults owned by 0xABCD...1234."
+
+    kitsune call vault_list --owner 0xABCD000000000000000000000000000000001234
+
+Returns the vault owned by that address, e.g. `{ "vault": "0xVAULT...", "owner": "0xABCD...1234" }` (or an empty result if none).
+
+User asks: "What tokens are in my vault 0xVAULT...?"
+
+    kitsune call vault_get_balances --vault 0xVAULT000000000000000000000000000000abcd
+
+Returns the per-token balances held by the vault, e.g. `[{ "token": "0xUSDC...", "symbol": "USDC", "balance": "1500000000" }, ...]`.
+
+User asks: "Withdraw 1 USDC from my vault back to me."
+
+The command moves funds on-chain, so the agent first shows the exact command and waits for explicit user confirmation before sending:
+
+    kitsune call vault_withdraw --args '{"vault":"0xVAULT...","token":"0xUSDC...","amount":"1000000"}'
+
+Only after the user confirms does the agent run it; it then returns the broadcast transaction hash.

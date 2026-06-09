@@ -13,7 +13,7 @@ metadata:
 
 # Kitsune Strategies
 
-See ../_shared/preflight.md first. On-chain writes need a `private_key` and send transactions on Pharos (mainnet by default; use `--profile testnet` for Atlantic).
+See [preflight](references/preflight.md) first. On-chain writes need a `private_key` and send transactions on Pharos (mainnet by default; use `--profile testnet` for Atlantic).
 
 ## Reads (sign-in required)
 | # | Command | Description |
@@ -43,3 +43,25 @@ See ../_shared/preflight.md first. On-chain writes need a `private_key` and send
 | 15 | `kitsune call strategy_restore --vault <addr> --strategyId <id>` | Restore |
 
 Amounts (`firstBuyAmount`, `maxPositionSize`) are in token base units; `dcaMultiplier` is 1e18-scaled. Add `--json` for raw output.
+
+## Examples
+
+User asks: "List the strategies in my vault 0xVAULT..."
+
+    kitsune call strategy_list --vault 0xVAULT000000000000000000000000000000abcd
+
+Returns the strategies in that vault, e.g. `[{ "strategyId": "3", "name": "My DCA", "active": true, "baseToken": "0x...", "quoteToken": "0x..." }, ...]`.
+
+User asks: "How is strategy 3 performing?"
+
+    kitsune call strategy_get_metrics --vault 0xVAULT... --strategyId 3
+
+Returns PnL / win-rate / Sharpe metrics for that strategy, e.g. `{ "pnl": "...", "winRate": 0.62, "sharpe": 1.3, "tradeCount": 24 }`.
+
+User asks: "Pause strategy 3."
+
+This is an on-chain write, so the agent first shows the exact command and waits for explicit user confirmation before sending:
+
+    kitsune call strategy_pause --vault 0xVAULT... --strategyId 3
+
+Only after the user confirms does the agent run it; it then returns the broadcast transaction hash.

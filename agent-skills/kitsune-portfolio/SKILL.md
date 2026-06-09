@@ -13,7 +13,7 @@ metadata:
 
 # Kitsune Portfolio
 
-See ../_shared/preflight.md first.
+See [preflight](references/preflight.md) first.
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|
@@ -22,3 +22,23 @@ See ../_shared/preflight.md first.
 | 3 | `kitsune call leaderboard_get --sort roi` | none | Leaderboard (sort: roi / winRate / sharpe / copies) |
 
 Add `--json` for machine-readable output.
+
+## Examples
+
+User asks: "Give me an overview of my whole portfolio for wallet 0xABCD...1234."
+
+    kitsune call portfolio_get --owner 0xABCD000000000000000000000000000000001234
+
+Returns aggregated metrics across the wallet's vaults, e.g. `{ "totalValue": "...", "pnl": "...", "vaultCount": 2, "strategyCount": 5 }`.
+
+User asks: "What are the top strategies by ROI right now?"
+
+    kitsune call leaderboard_get --sort roi
+
+Returns the public leaderboard ranked by ROI, e.g. `[{ "rank": 1, "name": "...", "roi": 0.42, "winRate": 0.6, "copies": 120 }, ...]`.
+
+User asks: "Show recent trade activity for my vault 0xVAULT..."
+
+    kitsune call portfolio_get_activity --vault 0xVAULT000000000000000000000000000000abcd
+
+Returns the vault's recent trades, e.g. `[{ "time": 1700000000, "side": "buy", "pair": "WPROS/USDC", "amount": "...", "price": "..." }, ...]`.

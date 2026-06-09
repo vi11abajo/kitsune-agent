@@ -15,6 +15,34 @@ Let your AI agent read markets, manage vaults, and run DCA / grid strategies on-
 
 ---
 
+> ### 🏆 Built for the Pharos *Skill-to-Agent Dual Cascade* Hackathon
+> A **production toolkit live on Pharos mainnet** — 9 **reusable, composable** Agent Skills plus an MCP
+> server, CLI, and shared core. Each Skill is a self-contained building block; chain them together and an
+> AI agent goes from reading a market to running an on-chain DCA strategy, all in natural language.
+
+---
+
+## ⚡ Try it in 30 seconds (no wallet)
+
+Point any MCP client at the **hosted, read-only** endpoint — no install, no private key. You get the
+**8 public market tools** (prices, candles, indicators, DODO pools, backtests) with zero setup:
+
+```bash
+# Claude Code — HTTP transport
+claude mcp add --transport http kitsune https://mcp.kitsune.finance/mcp
+```
+
+```jsonc
+// Cursor / VS Code / any URL-capable MCP client:
+{ "mcpServers": { "kitsune": { "url": "https://mcp.kitsune.finance/mcp" } } }
+```
+
+The hosted server speaks MCP over **Streamable HTTP** at `/mcp`. It is force-hardened to read-only with no
+key, so it's the fastest way to try the kit. For vaults, strategies and trades, run it locally — see
+[Quick Start](#quick-start).
+
+---
+
 ## What is this?
 
 Kitsune Agent Trade Kit connects AI assistants directly to the **Kitsune** automated-trading protocol on
@@ -34,6 +62,29 @@ It ships as **three standalone pieces around one shared core**, mirroring the OK
 | **`@kitsune-ai/agent-core`** | The shared library: config, REST client (SIWE/JWT), viem chain layer, and the single tool catalog used by both the MCP server and the CLI. |
 
 Plus **9 plug-and-play Skills** for clients that support the Agent Skills protocol.
+
+### Architecture
+
+```mermaid
+graph LR
+  A["AI agent<br/>(Claude · Cursor · OpenAI Agents SDK)"]
+  A --> S["Agent Skills<br/>(9 SKILL.md)"]
+  A --> M["kitsune-mcp<br/>MCP server"]
+  A --> C["kitsune CLI"]
+  S --> C
+  M --> K["@kitsune-ai/agent-core<br/>config · REST+SIWE · viem"]
+  C --> K
+  K --> R["Kitsune REST API<br/>api.kitsune.finance"]
+  K --> P["Pharos mainnet<br/>VaultFactory · Vaults<br/>DODO DEX · Push oracle"]
+```
+
+```text
+AI agent  →  Skills / MCP server / CLI  →  @kitsune-ai/agent-core  →  Kitsune REST API
+(Claude,                                   (REST + SIWE, viem)          + Pharos mainnet
+ Cursor,                                                                  (VaultFactory,
+ OpenAI)                                                                   vaults, DODO,
+                                                                          oracle)
+```
 
 ---
 
@@ -165,6 +216,38 @@ This prints the MCP registration to drop into your client config:
 Then ask your agent:
 
 > *"What's the BTC price on Kitsune?"* · *"Show my vaults."* · *"Create a DCA strategy buying WBTC with USDC."*
+
+### Works with
+
+**Claude Code · Claude Desktop · Cursor · VS Code · Windsurf · OpenAI Codex CLI** — and any MCP client or the
+**OpenAI Agents SDK**. Anything that speaks MCP (stdio or Streamable HTTP) can use the kit; stdio-only clients
+bridge to the hosted URL with `mcp-remote` (see Option A above).
+
+**OpenAI Agents SDK** — point it at the hosted Streamable HTTP endpoint:
+
+```python
+# Illustrative — adapt to your installed SDK version; the exact API may vary.
+from agents import Agent
+from agents.mcp import MCPServerStreamableHttp
+
+kitsune = MCPServerStreamableHttp(
+    params={"url": "https://mcp.kitsune.finance/mcp"},
+)
+agent = Agent(
+    name="Kitsune trader",
+    instructions="Use Kitsune tools to read markets and reason about strategies.",
+    mcp_servers=[kitsune],
+)
+```
+
+### Phase 2 ready — composability
+
+The 9 Skills are deliberately small, single-purpose blocks — that's what makes them **composable** into a
+full autonomous on-chain trading **Agent** (the hackathon's Phase 2 / Agent Arena). A single agent can chain
+them end to end: read indicators with `kitsune-market` → open a vault with `kitsune-vault` → launch a DCA
+strategy with `kitsune-strategy` → monitor PnL with `kitsune-portfolio` → rebalance by copying a top strategy
+from `kitsune-marketplace`. No new integration code — the Agent emerges from **reusing and composing existing
+Skills**.
 
 ---
 
@@ -353,8 +436,8 @@ strategies you need a `private_key` in your config (used to sign in and sign tra
 **Is it safe?** Keys never leave your machine; transactions are signed locally; market data needs no key.
 It's open source — audit it. Start in read-only mode or with a dedicated testnet key.
 
-**Which AI clients work?** Any MCP client — Claude Desktop, Claude Code, Cursor, VS Code, Windsurf, or custom
-agents built on the MCP SDK.
+**Which AI clients work?** Any MCP client — Claude Desktop, Claude Code, Cursor, VS Code, Windsurf, OpenAI
+Codex CLI, the OpenAI Agents SDK, or custom agents built on the MCP SDK.
 
 **Is it free?** Yes — MIT licensed. You only need a Pharos wallet to transact.
 

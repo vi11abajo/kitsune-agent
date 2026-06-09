@@ -13,7 +13,7 @@ metadata:
 
 # Kitsune Referrals
 
-See ../_shared/preflight.md first. Only `referral_resolve` is public; the rest need sign-in.
+See [preflight](references/preflight.md) first. Only `referral_resolve` is public; the rest need sign-in.
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|
@@ -23,3 +23,23 @@ See ../_shared/preflight.md first. Only `referral_resolve` is public; the rest n
 | 4 | `kitsune call referral_link --code <CODE>` | jwt | Link a referrer (one-time; no self-referral) |
 
 Add `--json` for machine-readable output.
+
+## Examples
+
+User asks: "What's my referral code and link?"
+
+    kitsune call referral_get_code
+
+Returns (or creates) your referral code and shareable link, e.g. `{ "code": "AB12CD34", "link": "https://kitsune.finance/?ref=AB12CD34" }`.
+
+User asks: "Who owns referral code AB12CD34?"
+
+    kitsune call referral_resolve --code AB12CD34
+
+Resolves the 8-char code to the referrer wallet, e.g. `{ "code": "AB12CD34", "owner": "0xABCD...1234" }`.
+
+User asks: "How many people have I referred?"
+
+    kitsune call referral_get_stats
+
+Returns your total referrals plus recently referred wallets, e.g. `{ "totalReferrals": 12, "recent": ["0x...", "0x..."] }`.
