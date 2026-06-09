@@ -3,7 +3,7 @@ import { MODULES, DEFAULT_MODULES, addressesFor, chainFor, PHAROS_MAINNET, PHARO
 
 describe('constants', () => {
   it('lists all modules', () => {
-    expect(MODULES).toEqual(['market', 'vault', 'strategy', 'portfolio', 'marketplace']);
+    expect(MODULES).toEqual(['market', 'vault', 'strategy', 'portfolio', 'marketplace', 'executor', 'referral', 'fees', 'notifications']);
   });
   it('defaults to Pharos mainnet + includes strategy module', () => {
     expect(DEFAULT_CHAIN_ID).toBe(1672);

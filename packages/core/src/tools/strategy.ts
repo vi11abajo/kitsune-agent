@@ -1,6 +1,6 @@
 import type { Address } from 'viem';
 import type { ToolSpec } from './types.js';
-import { str, optStr, optNum } from './types.js';
+import { str, optNum } from './types.js';
 import type { StrategyConfigInput } from '../chain/strategy-config.js';
 
 function strategyConfigSchemaProps() {
@@ -63,15 +63,15 @@ export function registerStrategyTools(): ToolSpec[] {
     },
     {
       name: 'strategy_get_trades', title: 'Get Strategy Trades', module: 'strategy', isWrite: false, auth: 'jwt',
-      description: 'Paginated trade history for a strategy.',
+      description: 'Paginated trade history for a strategy. page starts at 1; pageSize max 100.',
       inputSchema: {
         type: 'object',
-        properties: { vault: { type: 'string' }, strategyId: { type: 'string' }, limit: { type: 'number' }, offset: { type: 'number' } },
+        properties: { vault: { type: 'string' }, strategyId: { type: 'string' }, page: { type: 'number' }, pageSize: { type: 'number' } },
         required: ['vault', 'strategyId'],
       },
       handler: async (a, ctx) =>
         ctx.client.authedGet(`/strategies/${str(a, 'vault')}/${str(a, 'strategyId')}/trades`, {
-          limit: optNum(a, 'limit'), offset: optNum(a, 'offset'),
+          page: optNum(a, 'page'), pageSize: optNum(a, 'pageSize'),
         }),
     },
     {
@@ -146,19 +146,52 @@ export function registerStrategyTools(): ToolSpec[] {
     },
     {
       name: 'strategy_set_metadata', title: 'Set Strategy Metadata', module: 'strategy', isWrite: true, auth: 'jwt',
-      description: 'Update a strategy display name and/or tags (off-chain).',
+      description: 'Update a strategy display name (off-chain). Name max 50 chars.',
       inputSchema: {
         type: 'object',
         properties: {
           vault: { type: 'string' }, strategyId: { type: 'string' },
-          name: { type: 'string' }, tags: { type: 'array' },
+          name: { type: 'string' },
         },
-        required: ['vault', 'strategyId'],
+        required: ['vault', 'strategyId', 'name'],
       },
       handler: async (a, ctx) =>
         ctx.client.authedSend('PUT', `/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}/metadata`, {
-          name: optStr(a, 'name'), tags: a.tags,
+          name: str(a, 'name'),
         }),
+    },
+    {
+      name: 'strategy_set_config', title: 'Set Strategy Config', module: 'strategy', isWrite: true, auth: 'jwt',
+      description: 'Update the off-chain strategy config the executor uses: grid bounds, entry indicators, trailing TP/SL, recurring schedule, DCA step, etc. Pass fields via --args as JSON with correct types (numbers as numbers). Only provided fields are changed. NOTE: on-chain risk params (takeProfit/stopLoss/maxDcaCount/amounts) are NOT set here — use strategy_update for those.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          vault: { type: 'string' }, strategyId: { type: 'string' },
+          strategyType: { type: 'string', description: 'dca | grid | recurring' },
+          entryType: { type: 'string', description: 'immediate | rsi | macd | ema | bb | multi' },
+          gridUpperPrice: { type: 'number' }, gridLowerPrice: { type: 'number' },
+          gridCount: { type: 'number' },
+          gridType: { type: 'string', description: 'arithmetic | geometric | infinity | reverse' },
+          gridStartCondition: { type: 'string', description: 'instant | price' },
+          gridTriggerPrice: { type: 'number' },
+          recurringInterval: { type: 'string', description: 'hourly | daily | weekly' },
+          recurringAmount: { type: 'string' }, recurringTotalInvestment: { type: 'string' },
+          dcaOrderAmount: { type: 'string' },
+          priceStepPercent: { type: 'number' }, priceStepMultiplier: { type: 'number' },
+          rsiThreshold: { type: 'number' }, rsiPeriod: { type: 'number' }, rsiTimeframe: { type: 'string' },
+          trailingTpEnabled: { type: 'boolean' }, trailingTpCallbackPercent: { type: 'number' },
+          trailingSlEnabled: { type: 'boolean' }, trailingSlCallbackPercent: { type: 'number' },
+          entryIndicators: { type: 'object', description: '{ logic: "AND"|"OR", indicators: [{ type, params }] }' },
+          name: { type: 'string' },
+        },
+        required: ['vault', 'strategyId'],
+      },
+      handler: async (a, ctx) => {
+        const body: Record<string, unknown> = { ...a };
+        delete body.vault;
+        delete body.strategyId;
+        return ctx.client.authedSend('PUT', `/vaults/${str(a, 'vault')}/strategies/${str(a, 'strategyId')}/metadata`, body);
+      },
     },
     {
       name: 'strategy_hide', title: 'Hide Strategy', module: 'strategy', isWrite: true, auth: 'jwt',
