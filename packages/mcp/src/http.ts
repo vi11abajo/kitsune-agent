@@ -12,7 +12,11 @@ export interface HttpServerOptions {
   rateLimitPerMin: number; // per client IP
   maxSessions: number;
   sessionTtlMs: number;
+  /** Where to send humans who open the bare domain in a browser. */
+  docsUrl?: string;
 }
+
+const DEFAULT_DOCS_URL = 'https://kitsune.finance/agents';
 
 interface Session {
   transport: StreamableHTTPServerTransport;
@@ -111,6 +115,12 @@ export async function startHttpServer(config: KitsuneConfig, opts: HttpServerOpt
 
     if (url.pathname === '/health') {
       sendJson(res, 200, { ok: true, name: 'kitsune-agent-mcp', readOnly: true, sessions: sessions.size });
+      return;
+    }
+    // Humans opening the bare domain get the setup guide; machines talk MCP on opts.path.
+    if (url.pathname === '/' && (req.method === 'GET' || req.method === 'HEAD')) {
+      res.writeHead(302, { Location: opts.docsUrl ?? DEFAULT_DOCS_URL });
+      res.end();
       return;
     }
     if (url.pathname !== opts.path) {
