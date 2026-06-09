@@ -17,6 +17,7 @@ async function main() {
       path: { type: 'string' },
       'rate-limit': { type: 'string' },
       'max-sessions': { type: 'string' },
+      'docs-url': { type: 'string' },
     },
   });
   const modules = values.modules ? (values.modules.split(',') as ModuleId[]) : DEFAULT_MODULES;
@@ -35,6 +36,7 @@ async function main() {
       rateLimitPerMin: values['rate-limit'] ? parseInt(values['rate-limit'], 10) : 60,
       maxSessions: values['max-sessions'] ? parseInt(values['max-sessions'], 10) : 500,
       sessionTtlMs: 10 * 60_000,
+      docsUrl: values['docs-url'],
     });
     return;
   }
