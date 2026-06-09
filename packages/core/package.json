@@ -1,0 +1,22 @@
+{
+  "name": "@kitsune/agent-core",
+  "version": "0.1.0",
+  "description": "Shared core for the Kitsune Agent Trade Kit: config, API client (SIWE/JWT), viem chain layer, and the tool catalog.",
+  "license": "MIT",
+  "type": "module",
+  "files": ["dist"],
+  "publishConfig": { "access": "public" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "viem": "^2.21.0",
+    "siwe": "^2.3.2",
+    "smol-toml": "^1.3.0",
+    "zod": "^3.23.0"
+  }
+}
