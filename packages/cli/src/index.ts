@@ -1,4 +1,4 @@
-import { resolveConfig, readConfigFile, KitsuneApiClient, KitsuneChain, allToolSpecs } from '@kitsune/agent-core';
+import { resolveConfig, readConfigFile, KitsuneApiClient, KitsuneChain, allToolSpecs } from '@kitsune-ai/agent-core';
 import { privateKeyToAccount } from 'viem/accounts';
 import { runTool } from './runner.js';
 import { buildClientRegistration, SUPPORTED_CLIENTS } from './setup.js';

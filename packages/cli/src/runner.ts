@@ -1,4 +1,4 @@
-import { allToolSpecs, type ToolContext } from '@kitsune/agent-core';
+import { allToolSpecs, type ToolContext } from '@kitsune-ai/agent-core';
 
 const TOOL_MAP = new Map(allToolSpecs().map(t => [t.name, t]));
 

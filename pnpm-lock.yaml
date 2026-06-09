@@ -20,7 +20,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@kitsune/agent-core':
+      '@kitsune-ai/agent-core':
         specifier: workspace:*
         version: link:../core
       viem:
@@ -44,7 +44,7 @@ importers:
 
   packages/mcp:
     dependencies:
-      '@kitsune/agent-core':
+      '@kitsune-ai/agent-core':
         specifier: workspace:*
         version: link:../core
       '@modelcontextprotocol/sdk':

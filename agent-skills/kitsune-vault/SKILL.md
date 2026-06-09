@@ -8,7 +8,7 @@ metadata:
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune/agent-cli@0.1.0", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.1.0", bins: ["kitsune"] }
 ---
 
 # Kitsune Vaults
