@@ -71,19 +71,17 @@ Plus **5 plug-and-play Skills** for clients that support the Agent Skills protoc
 
 ### 1. Install
 
-> 📦 npm packages are being published. Until then, build from source — it works today:
+```bash
+npm install -g @kitsune-ai/agent-mcp @kitsune-ai/agent-cli
+```
+
+Or build from source:
 
 ```bash
 git clone https://github.com/vi11abajo/kitsune-agent
 cd kitsune-agent
 corepack pnpm install
 corepack pnpm -r build
-```
-
-Once published:
-
-```bash
-npm install -g @kitsune-ai/agent-mcp @kitsune-ai/agent-cli
 ```
 
 Verify (market data works with no credentials):
