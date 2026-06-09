@@ -3,7 +3,7 @@
 Before running any command in this skill:
 
 ## Step 1 — Install the Kitsune CLI
-npm install -g @kitsune/agent-cli
+npm install -g @kitsune-ai/agent-cli
 
 ## Step 2 — Configure credentials (only needed for vault/strategy writes)
 Create ~/.kitsune/config.toml:

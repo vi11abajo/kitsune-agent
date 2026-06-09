@@ -1,5 +1,5 @@
 {
-  "name": "@kitsune/agent-cli",
+  "name": "@kitsune-ai/agent-cli",
   "version": "0.1.0",
   "description": "Terminal CLI for the Kitsune (Pharos) DeFi protocol; also the backend for Kitsune Skills.",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@kitsune/agent-core": "workspace:*",
+    "@kitsune-ai/agent-core": "workspace:*",
     "viem": "^2.21.0"
   }
 }

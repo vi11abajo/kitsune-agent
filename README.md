@@ -29,9 +29,9 @@ It ships as **three standalone pieces around one shared core**, mirroring the OK
 
 | Package | What it is |
 |---|---|
-| **`@kitsune/agent-mcp`** (`kitsune-mcp`) | An [MCP](https://modelcontextprotocol.io) server. Plug into Claude, Cursor, VS Code, Windsurf, or any MCP client — your agent calls Kitsune tools by natural language. |
-| **`@kitsune/agent-cli`** (`kitsune`) | A terminal CLI. Works with shell pipes, cron, and scripts — no AI client needed. Also the runtime behind the Skills. |
-| **`@kitsune/agent-core`** | The shared library: config, REST client (SIWE/JWT), viem chain layer, and the single tool catalog used by both the MCP server and the CLI. |
+| **`@kitsune-ai/agent-mcp`** (`kitsune-mcp`) | An [MCP](https://modelcontextprotocol.io) server. Plug into Claude, Cursor, VS Code, Windsurf, or any MCP client — your agent calls Kitsune tools by natural language. |
+| **`@kitsune-ai/agent-cli`** (`kitsune`) | A terminal CLI. Works with shell pipes, cron, and scripts — no AI client needed. Also the runtime behind the Skills. |
+| **`@kitsune-ai/agent-core`** | The shared library: config, REST client (SIWE/JWT), viem chain layer, and the single tool catalog used by both the MCP server and the CLI. |
 
 Plus **5 plug-and-play Skills** for clients that support the Agent Skills protocol.
 
@@ -83,7 +83,7 @@ corepack pnpm -r build
 Once published:
 
 ```bash
-npm install -g @kitsune/agent-mcp @kitsune/agent-cli
+npm install -g @kitsune-ai/agent-mcp @kitsune-ai/agent-cli
 ```
 
 Verify (market data works with no credentials):
@@ -306,9 +306,9 @@ corepack pnpm -r test       # unit tests
 Workspace layout:
 
 ```
-packages/core   @kitsune/agent-core   shared: config, API client, viem chain, tool catalog
-packages/mcp    @kitsune/agent-mcp     stdio MCP server   (bin: kitsune-mcp)
-packages/cli    @kitsune/agent-cli     terminal CLI       (bin: kitsune)
+packages/core   @kitsune-ai/agent-core   shared: config, API client, viem chain, tool catalog
+packages/mcp    @kitsune-ai/agent-mcp     stdio MCP server   (bin: kitsune-mcp)
+packages/cli    @kitsune-ai/agent-cli     terminal CLI       (bin: kitsune)
 agent-skills/   5 SKILL.md + shared preflight
 ```
 

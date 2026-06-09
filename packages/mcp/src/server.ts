@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { buildTools, KitsuneApiClient, KitsuneChain, type KitsuneConfig } from '@kitsune/agent-core';
+import { buildTools, KitsuneApiClient, KitsuneChain, type KitsuneConfig } from '@kitsune-ai/agent-core';
 import { privateKeyToAccount } from 'viem/accounts';
 
 export function buildMcpToolList(config: KitsuneConfig) {

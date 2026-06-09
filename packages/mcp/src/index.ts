@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { resolveConfig, readConfigFile, DEFAULT_MODULES, type ModuleId } from '@kitsune/agent-core';
+import { resolveConfig, readConfigFile, DEFAULT_MODULES, type ModuleId } from '@kitsune-ai/agent-core';
 import { createServer } from './server.js';
 
 async function main() {
