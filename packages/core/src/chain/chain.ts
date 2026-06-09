@@ -3,24 +3,29 @@ import {
   createWalletClient,
   http,
   type Address,
+  type Chain,
   type PublicClient,
   type WalletClient,
 } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
-import { PHAROS_ATLANTIC, ADDRESSES } from '../constants.js';
+import { chainFor, addressesFor, type ChainAddresses } from '../constants.js';
 import { VAULT_FACTORY_ABI, USER_VAULT_ABI } from './abis.js';
 import { toStrategyTuple, type StrategyConfigInput } from './strategy-config.js';
 
 export class KitsuneChain {
   public readonly publicClient: PublicClient;
+  public readonly chain: Chain;
+  public readonly addresses: ChainAddresses;
   private readonly wallet?: WalletClient;
   private readonly account?: PrivateKeyAccount;
 
-  constructor(opts: { rpcUrl: string; privateKey?: `0x${string}` }) {
-    this.publicClient = createPublicClient({ chain: PHAROS_ATLANTIC, transport: http(opts.rpcUrl) });
+  constructor(opts: { rpcUrl: string; chainId: number; privateKey?: `0x${string}` }) {
+    this.chain = chainFor(opts.chainId);
+    this.addresses = addressesFor(opts.chainId);
+    this.publicClient = createPublicClient({ chain: this.chain, transport: http(opts.rpcUrl) });
     if (opts.privateKey) {
       this.account = privateKeyToAccount(opts.privateKey);
-      this.wallet = createWalletClient({ account: this.account, chain: PHAROS_ATLANTIC, transport: http(opts.rpcUrl) });
+      this.wallet = createWalletClient({ account: this.account, chain: this.chain, transport: http(opts.rpcUrl) });
     }
   }
 
@@ -35,22 +40,22 @@ export class KitsuneChain {
 
   async getVault(owner: Address): Promise<Address> {
     return this.publicClient.readContract({
-      address: ADDRESSES.vaultFactory,
+      address: this.addresses.vaultFactory,
       abi: VAULT_FACTORY_ABI,
       functionName: 'getVault',
       args: [owner],
     });
   }
 
-  async createVault(dexRouter: Address, oracle: Address): Promise<`0x${string}`> {
+  async createVault(dexRouter?: Address, oracle?: Address): Promise<`0x${string}`> {
     const { wallet, account } = this.requireWallet();
     return wallet.writeContract({
-      address: ADDRESSES.vaultFactory,
+      address: this.addresses.vaultFactory,
       abi: VAULT_FACTORY_ABI,
       functionName: 'createVault',
-      args: [dexRouter, oracle],
+      args: [dexRouter ?? this.addresses.defaultDexRouter, oracle ?? this.addresses.defaultOracle],
       account,
-      chain: PHAROS_ATLANTIC,
+      chain: this.chain,
     });
   }
 
@@ -62,7 +67,7 @@ export class KitsuneChain {
       functionName: 'createStrategy',
       args: [toStrategyTuple(config)],
       account,
-      chain: PHAROS_ATLANTIC,
+      chain: this.chain,
     });
   }
 
@@ -74,7 +79,7 @@ export class KitsuneChain {
       functionName: 'updateStrategy',
       args: [strategyId, toStrategyTuple(config)],
       account,
-      chain: PHAROS_ATLANTIC,
+      chain: this.chain,
     });
   }
 
@@ -86,7 +91,7 @@ export class KitsuneChain {
       functionName: 'withdrawStrategy',
       args: [strategyId],
       account,
-      chain: PHAROS_ATLANTIC,
+      chain: this.chain,
     });
   }
 
@@ -98,7 +103,7 @@ export class KitsuneChain {
       functionName: 'pauseStrategy',
       args: [strategyId],
       account,
-      chain: PHAROS_ATLANTIC,
+      chain: this.chain,
     });
   }
 
@@ -110,7 +115,7 @@ export class KitsuneChain {
       functionName: 'resumeStrategy',
       args: [strategyId],
       account,
-      chain: PHAROS_ATLANTIC,
+      chain: this.chain,
     });
   }
 
@@ -122,7 +127,7 @@ export class KitsuneChain {
       functionName: 'withdraw',
       args: [token, amount],
       account,
-      chain: PHAROS_ATLANTIC,
+      chain: this.chain,
     });
   }
 }

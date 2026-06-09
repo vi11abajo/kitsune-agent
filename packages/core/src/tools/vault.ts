@@ -1,6 +1,6 @@
 import type { Address } from 'viem';
 import type { ToolSpec } from './types.js';
-import { str } from './types.js';
+import { str, optStr } from './types.js';
 
 export function registerVaultTools(): ToolSpec[] {
   return [
@@ -36,17 +36,16 @@ export function registerVaultTools(): ToolSpec[] {
     },
     {
       name: 'vault_create', title: 'Create Vault', module: 'vault', isWrite: true, auth: 'signer',
-      description: 'Deploy a new UserVault for your wallet via the VaultFactory. [CAUTION] Sends an on-chain transaction.',
+      description: 'Deploy a new UserVault for your wallet via the VaultFactory. Uses the chain default DEX router and oracle unless overridden. [CAUTION] Sends an on-chain transaction.',
       inputSchema: {
         type: 'object',
         properties: {
-          dexRouter: { type: 'string', description: 'DEX router address' },
-          oracle: { type: 'string', description: 'price oracle address' },
+          dexRouter: { type: 'string', description: 'optional DEX router address (defaults to chain default)' },
+          oracle: { type: 'string', description: 'optional price oracle address (defaults to chain default)' },
         },
-        required: ['dexRouter', 'oracle'],
       },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.createVault(str(a, 'dexRouter') as Address, str(a, 'oracle') as Address);
+        const txHash = await ctx.chain.createVault(optStr(a, 'dexRouter') as Address | undefined, optStr(a, 'oracle') as Address | undefined);
         return { txHash, status: 'submitted' };
       },
     },

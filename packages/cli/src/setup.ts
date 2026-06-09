@@ -8,7 +8,7 @@ export interface SetupResult {
 const CONFIG_HINTS: Record<string, string> = {
   'claude-desktop':
     'Claude Desktop config (Windows: %APPDATA%\\Claude\\claude_desktop_config.json, macOS: ~/Library/Application Support/Claude/claude_desktop_config.json)',
-  'claude-code': 'Run: claude mcp add kitsune -- kitsune-mcp --profile testnet  (or add to ~/.claude.json)',
+  'claude-code': 'Run: claude mcp add kitsune -- kitsune-mcp --profile mainnet  (or add to ~/.claude.json)',
   cursor: '~/.cursor/mcp.json',
   vscode: '.vscode/mcp.json (workspace) or VS Code settings.json',
   windsurf: '~/.codeium/windsurf/mcp_config.json',
@@ -16,7 +16,7 @@ const CONFIG_HINTS: Record<string, string> = {
 
 export const SUPPORTED_CLIENTS = Object.keys(CONFIG_HINTS);
 
-export function buildClientRegistration(client: string, profile = 'testnet'): SetupResult {
+export function buildClientRegistration(client: string, profile = 'mainnet'): SetupResult {
   return {
     client,
     configHint: CONFIG_HINTS[client] ?? 'your MCP client config file',

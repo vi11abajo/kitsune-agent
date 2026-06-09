@@ -85,7 +85,7 @@ async function main(): Promise<void> {
       console.error(`Usage: kitsune setup --client <${SUPPORTED_CLIENTS.join('|')}>`);
       process.exit(1);
     }
-    const r = buildClientRegistration(client, profile ?? 'testnet');
+    const r = buildClientRegistration(client, profile ?? 'mainnet');
     console.log(`Add this to ${r.configHint}:\n`);
     console.log(JSON.stringify(r.registration, null, 2));
     return;
@@ -129,7 +129,7 @@ async function main(): Promise<void> {
     chainId: config.chainId,
     signer: account ? { address: account.address, signMessage: (a) => account.signMessage(a) } : undefined,
   });
-  const chain = new KitsuneChain({ rpcUrl: config.rpcUrl, privateKey: config.privateKey as `0x${string}` | undefined });
+  const chain = new KitsuneChain({ rpcUrl: config.rpcUrl, chainId: config.chainId, privateKey: config.privateKey as `0x${string}` | undefined });
 
   const out = await runTool(toolName, args, { client, chain, config });
   console.log(json ? JSON.stringify(out) : JSON.stringify(out, null, 2));

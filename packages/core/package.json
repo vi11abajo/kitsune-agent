@@ -1,6 +1,6 @@
 {
   "name": "@kitsune-ai/agent-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared core for the Kitsune Agent Trade Kit: config, API client (SIWE/JWT), viem chain layer, and the tool catalog.",
   "license": "MIT",
   "type": "module",

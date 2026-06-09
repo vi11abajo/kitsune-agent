@@ -5,7 +5,7 @@ describe('cli setup', () => {
   it('registers kitsune-mcp for a known client', () => {
     const r = buildClientRegistration('cursor');
     expect(r.registration.mcpServers.kitsune.command).toBe('kitsune-mcp');
-    expect(r.registration.mcpServers.kitsune.args).toEqual(['--profile', 'testnet']);
+    expect(r.registration.mcpServers.kitsune.args).toEqual(['--profile', 'mainnet']);
     expect(r.configHint).toContain('cursor');
   });
 
