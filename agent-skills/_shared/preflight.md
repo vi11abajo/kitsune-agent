@@ -6,14 +6,22 @@ Before running any command in this skill:
 npm install -g @kitsune-ai/agent-cli
 
 ## Step 2 — Configure credentials (only needed for vault/strategy writes)
-Create ~/.kitsune/config.toml:
+Create ~/.kitsune/config.toml (mainnet is the default; the default profile uses REAL funds):
 
-    default_profile = "testnet"
+    default_profile = "mainnet"
+
+    [profiles.mainnet]
+    api_url     = "https://api.kitsune.finance/api"
+    chain_id    = 1672
+    rpc_url     = "https://rpc.pharos.xyz"
+    private_key = "0x..."   # self-custody key; required ONLY for sign-in + on-chain writes
+
+    # Risk-free testnet (Pharos Atlantic) — use with `--profile testnet`
     [profiles.testnet]
     api_url     = "https://api.kitsune.finance/api"
     chain_id    = 688689
     rpc_url     = "https://atlantic.dplabs-internal.com"
-    private_key = "0x..."   # self-custody key; required ONLY for on-chain writes
+    private_key = "0x..."
 
 Market data needs no credentials.
 

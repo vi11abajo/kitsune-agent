@@ -5,8 +5,8 @@ import { str, optStr } from './types.js';
 export function registerVaultTools(): ToolSpec[] {
   return [
     {
-      name: 'vault_list', title: 'List Vaults', module: 'vault', isWrite: false, auth: 'jwt',
-      description: 'List the vaults owned by an address.',
+      name: 'vault_list', title: 'Get Vault', module: 'vault', isWrite: false, auth: 'jwt',
+      description: 'Get the vault owned by an address (returns its address, DEX router, oracle, createdAt, and strategyCount). 404 if the owner has no vault.',
       inputSchema: {
         type: 'object',
         properties: { owner: { type: 'string', description: 'owner wallet address' } },

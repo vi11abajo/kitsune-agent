@@ -1,9 +1,9 @@
 import { defineChain } from 'viem';
 
-export const MODULES = ['market', 'vault', 'strategy', 'portfolio', 'marketplace'] as const;
+export const MODULES = ['market', 'vault', 'strategy', 'portfolio', 'marketplace', 'executor', 'referral', 'fees', 'notifications'] as const;
 export type ModuleId = (typeof MODULES)[number];
 
-export const DEFAULT_MODULES: ModuleId[] = ['market', 'vault', 'strategy', 'portfolio', 'marketplace'];
+export const DEFAULT_MODULES: ModuleId[] = ['market', 'vault', 'strategy', 'portfolio', 'marketplace', 'executor', 'referral', 'fees', 'notifications'];
 
 export const PHAROS_MAINNET = defineChain({
   id: 1672,

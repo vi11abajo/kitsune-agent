@@ -1,7 +1,7 @@
 import { resolveConfig, readConfigFile, KitsuneApiClient, KitsuneChain, allToolSpecs } from '@kitsune-ai/agent-core';
 import { privateKeyToAccount } from 'viem/accounts';
 import { runTool } from './runner.js';
-import { buildClientRegistration, SUPPORTED_CLIENTS } from './setup.js';
+import { buildClientRegistration, buildRemoteRegistration, SUPPORTED_CLIENTS, DEFAULT_REMOTE_URL } from './setup.js';
 
 interface Globals {
   json: boolean;
@@ -64,7 +64,11 @@ Usage:
   kitsune call <tool> --args '<json>'           Run any tool with JSON args
   kitsune call <tool> --key value ...           Run any tool with flag args
   kitsune tools                                 List all available tools
-  kitsune setup --client <${SUPPORTED_CLIENTS.join('|')}>
+  kitsune setup --client <${SUPPORTED_CLIENTS.join('|')}> [--remote] [--npx]
+
+setup flags:
+  --remote   connect to the hosted public read-only server (${DEFAULT_REMOTE_URL})
+  --npx      local server via "npx @kitsune-ai/agent-mcp" (no global install)
 
 Global flags: --json  --profile <name>  --read-only`);
 }
@@ -82,10 +86,14 @@ async function main(): Promise<void> {
     const flags = parseFlags(rest.slice(1));
     const client = typeof flags.client === 'string' ? flags.client : '';
     if (!client) {
-      console.error(`Usage: kitsune setup --client <${SUPPORTED_CLIENTS.join('|')}>`);
+      console.error(`Usage: kitsune setup --client <${SUPPORTED_CLIENTS.join('|')}> [--remote] [--npx]`);
       process.exit(1);
     }
-    const r = buildClientRegistration(client, profile ?? 'mainnet');
+    const r = flags.remote
+      ? buildRemoteRegistration(client)
+      : buildClientRegistration(client, profile ?? 'mainnet', Boolean(flags.npx));
+    if (r.note) console.log(`# ${r.note}\n`);
+    if (r.cli) console.log(`${r.cli}\n`);
     console.log(`Add this to ${r.configHint}:\n`);
     console.log(JSON.stringify(r.registration, null, 2));
     return;

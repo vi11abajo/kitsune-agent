@@ -1,19 +1,24 @@
 import type { ToolSpec } from './types.js';
-import { str, optStr } from './types.js';
+import { str, optStr, optNum } from './types.js';
 
 export function registerMarketplaceTools(): ToolSpec[] {
   return [
     {
       name: 'marketplace_list', title: 'List Marketplace', module: 'marketplace', isWrite: false, auth: 'none',
-      description: 'Browse active strategies shared to the marketplace.',
+      description: 'Browse active strategies shared to the marketplace. sort one of popular,newest,rating (default popular). Optional pair filter (e.g. WPROS/USDC).',
       inputSchema: {
         type: 'object',
         properties: {
-          status: { type: 'string', description: 'filter, e.g. active' },
-          tradingPair: { type: 'string', description: 'filter by pair, e.g. BTC/USDT' },
+          pair: { type: 'string', description: 'filter by trading pair, e.g. WPROS/USDC' },
+          sort: { type: 'string', description: 'popular | newest | rating (default popular)' },
+          page: { type: 'number' }, pageSize: { type: 'number' },
         },
       },
-      handler: async (a, ctx) => ctx.client.get('/marketplace', { status: optStr(a, 'status'), tradingPair: optStr(a, 'tradingPair') }),
+      handler: async (a, ctx) =>
+        ctx.client.get('/marketplace', {
+          pair: optStr(a, 'pair'), sort: optStr(a, 'sort'),
+          page: optNum(a, 'page'), pageSize: optNum(a, 'pageSize'),
+        }),
     },
     {
       name: 'marketplace_get', title: 'Get Marketplace Strategy', module: 'marketplace', isWrite: false, auth: 'none',
@@ -23,39 +28,46 @@ export function registerMarketplaceTools(): ToolSpec[] {
     },
     {
       name: 'marketplace_share', title: 'Share To Marketplace', module: 'marketplace', isWrite: true, auth: 'jwt',
-      description: 'Publish one of your strategies to the marketplace.',
+      description: 'Publish a strategy to the marketplace. name and tradingPair are required. strategyType is dca|grid|recurring (default dca). sourceStrategyId (if given) is a number.',
       inputSchema: {
         type: 'object',
         properties: {
-          name: { type: 'string' }, description: { type: 'string' },
-          sourceVaultAddress: { type: 'string' }, sourceStrategyId: { type: 'string' },
-          tradingPair: { type: 'string' }, tags: { type: 'array' },
+          name: { type: 'string' }, tradingPair: { type: 'string', description: 'e.g. WPROS/USDC' },
+          description: { type: 'string' },
+          strategyType: { type: 'string', description: 'dca | grid | recurring (default dca)' },
+          config: { type: 'object', description: 'optional strategy config snapshot' },
+          tags: { type: 'array' },
+          backtestPnl: { type: 'number' }, backtestWinRate: { type: 'number' },
+          sourceVaultAddress: { type: 'string' }, sourceStrategyId: { type: 'number' },
         },
-        required: ['name', 'sourceVaultAddress', 'sourceStrategyId'],
+        required: ['name', 'tradingPair'],
       },
       handler: async (a, ctx) =>
         ctx.client.authedSend('POST', '/marketplace', {
           name: str(a, 'name'),
+          tradingPair: str(a, 'tradingPair'),
           description: optStr(a, 'description'),
-          sourceVaultAddress: str(a, 'sourceVaultAddress'),
-          sourceStrategyId: str(a, 'sourceStrategyId'),
-          tradingPair: optStr(a, 'tradingPair'),
+          strategyType: optStr(a, 'strategyType'),
+          config: a.config,
           tags: a.tags,
+          backtestPnl: optNum(a, 'backtestPnl'),
+          backtestWinRate: optNum(a, 'backtestWinRate'),
+          sourceVaultAddress: optStr(a, 'sourceVaultAddress'),
+          sourceStrategyId: optNum(a, 'sourceStrategyId'),
         }),
     },
     {
       name: 'marketplace_copy', title: 'Copy Marketplace Strategy', module: 'marketplace', isWrite: true, auth: 'jwt',
-      description: 'Copy a marketplace strategy into one of your vaults.',
+      description: 'Record a copy of a marketplace strategy (increments its copy count and returns its publicId). The actual on-chain deployment into your vault is done separately with strategy_create (+ strategy_set_metadata).',
       inputSchema: {
         type: 'object',
         properties: {
           id: { type: 'string', description: 'public strategy id' },
-          vault: { type: 'string', description: 'destination vault address' },
         },
-        required: ['id', 'vault'],
+        required: ['id'],
       },
       handler: async (a, ctx) =>
-        ctx.client.authedSend('POST', `/marketplace/${str(a, 'id')}/copy`, { vault: str(a, 'vault') }),
+        ctx.client.authedSend('POST', `/marketplace/${str(a, 'id')}/copy`),
     },
     {
       name: 'marketplace_delist', title: 'Delist Marketplace Strategy', module: 'marketplace', isWrite: true, auth: 'jwt',

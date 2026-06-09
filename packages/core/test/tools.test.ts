@@ -39,6 +39,9 @@ describe('tool catalog', () => {
     expect(tools.some(t => t.name === 'vault_list')).toBe(false);
     expect(tools.some(t => t.name === 'strategy_pause')).toBe(false);
     expect(tools.some(t => t.name === 'market_run_backtest')).toBe(false);
+    expect(tools.some(t => t.name === 'referral_resolve')).toBe(true);
+    expect(tools.some(t => t.name === 'executor_list')).toBe(false);
+    expect(tools.some(t => t.name === 'fees_get_dashboard')).toBe(false);
   });
 
   // ---- read handlers ----
@@ -67,10 +70,10 @@ describe('tool catalog', () => {
     expect(client.authedGet).toHaveBeenCalledWith('/portfolio/0xo');
   });
 
-  it('marketplace_list uses public get', async () => {
+  it('marketplace_list uses public get with pair/sort params', async () => {
     const client = { get: vi.fn().mockResolvedValue([]) };
-    await find('marketplace_list').handler({}, ctxWith({ client }));
-    expect(client.get).toHaveBeenCalledWith('/marketplace', { status: undefined, tradingPair: undefined });
+    await find('marketplace_list').handler({ pair: 'WPROS/USDC', sort: 'newest' }, ctxWith({ client }));
+    expect(client.get).toHaveBeenCalledWith('/marketplace', { pair: 'WPROS/USDC', sort: 'newest', page: undefined, pageSize: undefined });
   });
 
   // ---- write handlers ----
@@ -79,6 +82,15 @@ describe('tool catalog', () => {
     const cfg = { pair: 'BTC/USDT', startDate: '2024-01-01', endDate: '2024-02-01' };
     await find('market_run_backtest').handler({ config: cfg }, ctxWith({ client }));
     expect(client.authedSend).toHaveBeenCalledWith('POST', '/backtest/run', cfg);
+  });
+
+  it('market_get_dodo_route uses authedGet and defaults userAddr to the wallet', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue({}) };
+    const chain = { address: '0xme' };
+    await find('market_get_dodo_route').handler({ fromToken: '0xA', toToken: '0xB', fromAmount: '1000' }, ctxWith({ client, chain }));
+    expect(client.authedGet).toHaveBeenCalledWith('/dodo/route', {
+      fromTokenAddress: '0xA', toTokenAddress: '0xB', fromAmount: '1000', slippage: undefined, userAddr: '0xme',
+    });
   });
 
   it('strategy_create calls chain.createStrategy and returns a tx result', async () => {
@@ -96,9 +108,33 @@ describe('tool catalog', () => {
     expect(out).toEqual({ txHash: '0xabc', status: 'submitted' });
   });
 
-  it('marketplace_copy uses authedSend with the copy path', async () => {
+  it('marketplace_copy uses authedSend with the copy path (no body)', async () => {
     const client = { authedSend: vi.fn().mockResolvedValue({}) };
-    await find('marketplace_copy').handler({ id: '7', vault: '0xv' }, ctxWith({ client }));
-    expect(client.authedSend).toHaveBeenCalledWith('POST', '/marketplace/7/copy', { vault: '0xv' });
+    await find('marketplace_copy').handler({ id: '7' }, ctxWith({ client }));
+    expect(client.authedSend).toHaveBeenCalledWith('POST', '/marketplace/7/copy');
+  });
+
+  it('referral_resolve uses public get', async () => {
+    const client = { get: vi.fn().mockResolvedValue({ address: '0xr' }) };
+    await find('referral_resolve').handler({ code: 'ABCD2345' }, ctxWith({ client }));
+    expect(client.get).toHaveBeenCalledWith('/referral/resolve', { code: 'ABCD2345' });
+  });
+
+  it('executor_get_jobs uses authedGet with pagination + status', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue({}) };
+    await find('executor_get_jobs').handler({ address: '0xe', status: 'CONFIRMED', page: 2, pageSize: 50 }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith('/executors/0xe/jobs', { status: 'CONFIRMED', page: 2, pageSize: 50, chainId: undefined });
+  });
+
+  it('strategy_set_config PUTs metadata without vault/strategyId in the body', async () => {
+    const client = { authedSend: vi.fn().mockResolvedValue({}) };
+    await find('strategy_set_config').handler({ vault: '0xv', strategyId: '3', strategyType: 'grid', gridCount: 20 }, ctxWith({ client }));
+    expect(client.authedSend).toHaveBeenCalledWith('PUT', '/vaults/0xv/strategies/3/metadata', { strategyType: 'grid', gridCount: 20 });
+  });
+
+  it('notifications_set_preferences PUTs the args as body', async () => {
+    const client = { authedSend: vi.fn().mockResolvedValue({}) };
+    await find('notifications_set_preferences').handler({ notifyBuy: false }, ctxWith({ client }));
+    expect(client.authedSend).toHaveBeenCalledWith('PUT', '/notifications/preferences', { notifyBuy: false });
   });
 });
