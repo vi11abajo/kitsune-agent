@@ -41,7 +41,7 @@ Plus **5 plug-and-play Skills** for clients that support the Agent Skills protoc
 
 | Feature | Details |
 |---|---|
-| **33 tools across 5 modules** | market · vault · strategy · portfolio · marketplace |
+| **47 tools across 9 modules** | market · vault · strategy · portfolio · marketplace · executor · referral · fees · notifications |
 | **Market data** | prices, OHLCV candles, technical indicators (RSI/MACD/EMA/Bollinger), DODO pools, backtests |
 | **Vaults** | list, balances, allocations, create, withdraw |
 | **Strategies** | DCA / grid lifecycle — create, update, pause, resume, withdraw, plus trades, metrics & positions |
@@ -56,11 +56,15 @@ Plus **5 plug-and-play Skills** for clients that support the Agent Skills protoc
 
 | Module | Tools | Skill | Auth |
 |---|---|---|---|
-| `market` | 6 | `kitsune-market` | public (backtest needs sign-in) |
+| `market` | 6 | `kitsune-market` | public (backtest & DODO route need sign-in) |
 | `vault` | 5 | `kitsune-vault` | sign-in / signer |
-| `strategy` | 14 | `kitsune-strategy` | sign-in / signer |
+| `strategy` | 15 | `kitsune-strategy` | sign-in / signer |
 | `portfolio` | 3 | `kitsune-portfolio` | sign-in (leaderboard public) |
 | `marketplace` | 5 | `kitsune-marketplace` | public / sign-in |
+| `executor` | 3 | `kitsune-executor` | sign-in |
+| `referral` | 4 | `kitsune-referral` | public (resolve) / sign-in |
+| `fees` | 2 | `kitsune-fees` | sign-in |
+| `notifications` | 4 | `kitsune-notifications` | sign-in |
 
 > **Auth legend** — `public`: no credentials · `sign-in` (jwt): a local SIWE sign-in (needs a private key) ·
 > `signer`: sends an on-chain transaction (needs a private key).
@@ -120,8 +124,32 @@ wallet_address = "0x..."
 
 ### 3. Connect your AI client
 
+**Option A — Hosted, read-only (zero install).** Point any MCP client at the public endpoint — no install, no key. Market data, indicators, leaderboard and marketplace browsing:
+
+```
+https://mcp.kitsune.finance/mcp
+```
+
 ```bash
-kitsune-mcp setup --client cursor      # or: claude-desktop | claude-code | vscode | windsurf
+# Claude Code (HTTP transport)
+claude mcp add --transport http kitsune-remote https://mcp.kitsune.finance/mcp
+```
+
+```jsonc
+// URL-capable clients (Cursor, VS Code):
+{ "mcpServers": { "kitsune-remote": { "url": "https://mcp.kitsune.finance/mcp" } } }
+
+// stdio-only clients (e.g. Claude Desktop) — bridge with mcp-remote:
+{ "mcpServers": { "kitsune-remote": { "command": "npx", "args": ["-y", "mcp-remote", "https://mcp.kitsune.finance/mcp"] } } }
+```
+
+Print these for your client with `kitsune setup --client <name> --remote`.
+
+**Option B — Local, full power (self-custody).** Run the server on your machine to manage vaults, strategies and trades — your key signs locally and never leaves the box:
+
+```bash
+kitsune-mcp setup --client cursor          # or: claude-desktop | claude-code | vscode | windsurf
+kitsune-mcp setup --client cursor --npx    # registration that runs via npx (no global install)
 ```
 
 This prints the MCP registration to drop into your client config:
@@ -151,6 +179,9 @@ Register once; your agent gets the tools. Startup options:
 | Testnet (risk-free) | `kitsune-mcp --profile testnet` |
 | Read-only monitoring | `kitsune-mcp --profile mainnet --read-only` |
 | Specific modules | `kitsune-mcp --profile mainnet --modules market,vault,strategy` |
+| Host a public read-only server | `kitsune-mcp --http --host 127.0.0.1 --port 8788 --rate-limit 60` |
+
+**Transports.** By default the server speaks MCP over **stdio** (the client launches it locally). Add `--http` to run a **Streamable HTTP** server instead — used for the hosted endpoint at `https://mcp.kitsune.finance/mcp`. HTTP mode is **forced read-only and key-less** (only public tools are ever exposed), with per-IP rate limiting; put it behind a reverse proxy for TLS.
 
 The server advertises each tool with MCP annotations (`readOnlyHint`, `destructiveHint`) derived from whether
 it writes. With `--read-only`, every write tool is removed. With no `private_key`, every sign-in/on-chain tool
@@ -158,14 +189,14 @@ is hidden — the agent never even sees what it can't do.
 
 ### Tools
 
-**`market`** — public (backtest needs sign-in)
+**`market`** — public (backtest & DODO route need sign-in)
 | Tool | Description |
 |---|---|
 | `market_get_price` | Current price + 24h stats for a pair |
 | `market_get_candles` | OHLCV candles (1m…1d) |
 | `market_get_indicators` | RSI / MACD / EMA / Bollinger |
 | `market_batch_prices` | Up to 10 pairs at once |
-| `market_get_dodo_pools` | DODO liquidity pools |
+| `market_get_dodo_route` | DODO swap route / quote (sign-in) |
 | `market_run_backtest` | Backtest a strategy config (no funds) |
 
 **`vault`**
@@ -185,7 +216,7 @@ is hidden — the agent never even sees what it can't do.
 | `strategy_create` / `strategy_update` | signer ⚠️ | Create / update a strategy on-chain |
 | `strategy_pause` / `strategy_resume` | signer ⚠️ | Pause / resume execution |
 | `strategy_withdraw` | signer ⚠️ | Withdraw a strategy position |
-| `strategy_restart_cycle` / `strategy_set_metadata` / `strategy_hide` / `strategy_restore` | sign-in | Off-chain bookkeeping |
+| `strategy_restart_cycle` / `strategy_set_metadata` / `strategy_set_config` / `strategy_hide` / `strategy_restore` | sign-in | Off-chain config (grid/recurring/indicators/trailing) & bookkeeping |
 
 **`portfolio`**
 | Tool | Auth | Description |
@@ -198,7 +229,34 @@ is hidden — the agent never even sees what it can't do.
 | Tool | Auth | Description |
 |---|---|---|
 | `marketplace_list` / `marketplace_get` | public | Browse / view shared strategies |
-| `marketplace_share` / `marketplace_copy` / `marketplace_delist` | sign-in | Publish / copy / delist |
+| `marketplace_share` / `marketplace_copy` / `marketplace_delist` | sign-in | Publish / record-copy / delist |
+
+**`executor`** — sign-in
+| Tool | Description |
+|---|---|
+| `executor_list` | Registered executors (pick an `allowedExecutor`) |
+| `executor_get` | Executor details + pending/completed/failed job counts |
+| `executor_get_jobs` | Paginated executor job history |
+
+**`referral`**
+| Tool | Auth | Description |
+|---|---|---|
+| `referral_resolve` | public | Resolve a code to the referrer wallet |
+| `referral_get_code` / `referral_get_stats` | sign-in | Your code + link / referral stats |
+| `referral_link` | sign-in | Link a referrer (one-time, no self-referral) |
+
+**`fees`** — sign-in
+| Tool | Description |
+|---|---|
+| `fees_get_dashboard` | Creator + referrer earned/claimed + referral link |
+| `fees_get_history` | Daily-aggregated fee earnings |
+
+**`notifications`** — sign-in
+| Tool | Description |
+|---|---|
+| `notifications_get_telegram_status` | Telegram link status |
+| `notifications_get_preferences` / `notifications_set_preferences` | Get / upsert prefs (global or per-strategy) |
+| `notifications_unlink_telegram` | ⚠️ Unlink Telegram |
 
 ---
 
@@ -217,7 +275,7 @@ kitsune call vault_list --owner 0xYourAddress
 kitsune call strategy_create --args '{"vault":"0x..","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":1000,"maxDcaCount":5,"maxTradesPerDay":3,"active":true,"firstBuyAmount":"1000000","maxPositionSize":"5000000","dcaMultiplier":"1500000000000000000"}'
 
 # Discoverability
-kitsune tools                       # list all 33 tools
+kitsune tools                       # list all 47 tools
 kitsune setup --client cursor       # print MCP registration
 
 # Pipes & scripting
@@ -235,11 +293,15 @@ that shells out to the `kitsune` CLI.
 
 | Skill | Covers | Credentials |
 |---|---|---|
-| `kitsune-market` | prices, candles, indicators, DODO pools, backtests | none for reads |
+| `kitsune-market` | prices, candles, indicators, DODO swap routes, backtests | none for reads |
 | `kitsune-vault` | list/balances/allocations, create, withdraw | sign-in / key |
-| `kitsune-strategy` | full DCA/grid lifecycle + trades & metrics | sign-in / key |
+| `kitsune-strategy` | full DCA/grid lifecycle + off-chain config + trades & metrics | sign-in / key |
 | `kitsune-portfolio` | portfolio, activity, leaderboard | sign-in (leaderboard public) |
 | `kitsune-marketplace` | browse, share, copy, delist | public / sign-in |
+| `kitsune-executor` | list executors, details, job history | sign-in |
+| `kitsune-referral` | resolve / get code / stats / link | public (resolve) / sign-in |
+| `kitsune-fees` | creator + referrer earnings dashboard & history | sign-in |
+| `kitsune-notifications` | Telegram status, preferences, unlink | sign-in |
 
 Skills live in [`agent-skills/`](./agent-skills).
 

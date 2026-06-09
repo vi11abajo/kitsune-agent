@@ -53,14 +53,31 @@ export function registerMarketTools(): ToolSpec[] {
       handler: async (a, ctx) => ctx.client.get('/prices/batch', { pairs: str(a, 'pairs') }),
     },
     {
-      name: 'market_get_dodo_pools', title: 'Get DODO Pools', module: 'market', isWrite: false, auth: 'none',
-      description: 'List DODO liquidity pools available on Pharos.',
-      inputSchema: { type: 'object', properties: {} },
-      handler: async (_a, ctx) => ctx.client.get('/dodo'),
+      name: 'market_get_dodo_route', title: 'Get DODO Swap Route', module: 'market', isWrite: false, auth: 'jwt',
+      description: 'Get a DODO swap route/quote on Pharos for swapping fromToken -> toToken. fromAmount is in base units (integer string) of fromToken. Requires sign-in. No funds are moved.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          fromToken: { type: 'string', description: 'sell token address (0x...)' },
+          toToken: { type: 'string', description: 'buy token address (0x...)' },
+          fromAmount: { type: 'string', description: 'amount to sell, in base units (integer string)' },
+          slippage: { type: 'number', description: 'slippage % (0.1-50, default 1)' },
+          userAddr: { type: 'string', description: 'swapper address (defaults to your wallet)' },
+        },
+        required: ['fromToken', 'toToken', 'fromAmount'],
+      },
+      handler: async (a, ctx) =>
+        ctx.client.authedGet('/dodo/route', {
+          fromTokenAddress: str(a, 'fromToken'),
+          toTokenAddress: str(a, 'toToken'),
+          fromAmount: str(a, 'fromAmount'),
+          slippage: optNum(a, 'slippage'),
+          userAddr: optStr(a, 'userAddr') ?? ctx.chain.address,
+        }),
     },
     {
       name: 'market_run_backtest', title: 'Run Backtest', module: 'market', isWrite: false, auth: 'jwt',
-      description: 'Run a strategy backtest simulation. config = { pair, startDate, endDate, ...strategy params }. Requires sign-in (no funds moved).',
+      description: 'Run a strategy backtest simulation (no funds moved; requires sign-in). config requires: pair (BASE/QUOTE), strategyType (dca|grid|recurring), timeframe (1m..1d), startDate, endDate; plus strategy params (e.g. initialOrderAmount, dcaOrderAmount, takeProfitPercent, stopLossPercent, stopLossEnabled; grid: gridUpperPrice, gridLowerPrice, gridCount).',
       inputSchema: {
         type: 'object',
         properties: { config: { type: 'object', description: 'Backtest config: pair (BASE/QUOTE), startDate, endDate, and strategy parameters' } },

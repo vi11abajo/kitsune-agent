@@ -4,6 +4,10 @@ import { registerVaultTools } from './vault.js';
 import { registerStrategyTools } from './strategy.js';
 import { registerPortfolioTools } from './portfolio.js';
 import { registerMarketplaceTools } from './marketplace.js';
+import { registerExecutorTools } from './executor.js';
+import { registerReferralTools } from './referral.js';
+import { registerFeeTools } from './fees.js';
+import { registerNotificationTools } from './notifications.js';
 
 export function allToolSpecs(): ToolSpec[] {
   return [
@@ -12,6 +16,10 @@ export function allToolSpecs(): ToolSpec[] {
     ...registerStrategyTools(),
     ...registerPortfolioTools(),
     ...registerMarketplaceTools(),
+    ...registerExecutorTools(),
+    ...registerReferralTools(),
+    ...registerFeeTools(),
+    ...registerNotificationTools(),
   ];
 }
 

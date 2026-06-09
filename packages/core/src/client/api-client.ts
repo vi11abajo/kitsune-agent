@@ -90,7 +90,7 @@ export class KitsuneApiClient {
     );
   }
 
-  async authedSend(method: 'POST' | 'PUT', path: string, body?: unknown): Promise<unknown> {
+  async authedSend(method: 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<unknown> {
     const token = await this.ensureToken();
     return this.parse(
       await this.f(this.url(path), {

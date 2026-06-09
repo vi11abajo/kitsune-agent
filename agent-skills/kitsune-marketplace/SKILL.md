@@ -4,11 +4,11 @@ description: "Use this skill for the Kitsune (Pharos) strategy marketplace: brow
 license: MIT
 metadata:
   author: kitsune
-  version: "0.1.1"
+  version: "0.2.0"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.1.1", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.0", bins: ["kitsune"] }
 ---
 
 # Kitsune Marketplace
@@ -17,10 +17,10 @@ See ../_shared/preflight.md first. Browsing is public; sharing/copying/delisting
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|
-| 1 | `kitsune call marketplace_list --status active` | none | Browse shared strategies |
+| 1 | `kitsune call marketplace_list --sort popular` | none | Browse shared strategies (sort: popular / newest / rating; optional `--pair WPROS/USDC`) |
 | 2 | `kitsune call marketplace_get --id <publicId>` | none | Get a marketplace strategy |
-| 3 | `kitsune call marketplace_share --args '{"name":"My DCA","sourceVaultAddress":"0x..","sourceStrategyId":"3","tradingPair":"BTC/USDT","tags":["dca"]}'` | jwt | Publish a strategy |
-| 4 | `kitsune call marketplace_copy --id <publicId> --vault <addr>` | jwt | Copy into your vault |
+| 3 | `kitsune call marketplace_share --args '{"name":"My DCA","tradingPair":"WPROS/USDC","strategyType":"dca","sourceVaultAddress":"0x..","sourceStrategyId":3}'` | jwt | Publish a strategy (name + tradingPair required; sourceStrategyId is a number) |
+| 4 | `kitsune call marketplace_copy --id <publicId>` | jwt | Record a copy (increments copy count) |
 | 5 | `kitsune call marketplace_delist --id <publicId>` | jwt | Delist your strategy |
 
 Add `--json` for machine-readable output.
