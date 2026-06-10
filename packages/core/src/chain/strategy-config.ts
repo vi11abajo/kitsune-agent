@@ -11,7 +11,7 @@ export interface StrategyConfigInput {
   active: boolean;
   firstBuyAmount: string; // base units, as decimal string
   maxPositionSize: string;
-  dcaMultiplier: string; // 1e18-scaled multiplier, as decimal string
+  dcaMultiplier: string; // 10000-scaled (bps) multiplier, as decimal string; contract accepts 10000-30000 (x1.0-x3.0)
 }
 
 export interface StrategyTuple {

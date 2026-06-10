@@ -359,7 +359,7 @@ kitsune call market_get_indicators --base BTC --quote USDT
 
 # Any tool, exact typed args
 kitsune call vault_list --owner 0xYourAddress
-kitsune call strategy_create --args '{"vault":"0x..","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":1000,"maxDcaCount":5,"maxTradesPerDay":3,"active":true,"firstBuyAmount":"1000000","maxPositionSize":"5000000","dcaMultiplier":"1500000000000000000"}'
+kitsune call strategy_create --args '{"vault":"0x..","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":1000,"maxDcaCount":5,"maxTradesPerDay":3,"active":true,"firstBuyAmount":"1000000","maxPositionSize":"15000000","dcaMultiplier":"15000"}'
 
 # Discoverability
 kitsune tools                       # list all 47 tools

@@ -15,7 +15,7 @@ function strategyConfigSchemaProps() {
     active: { type: 'boolean', description: 'whether the strategy is active' },
     firstBuyAmount: { type: 'string', description: 'first buy amount in base units (decimal string)' },
     maxPositionSize: { type: 'string', description: 'max position size in base units (decimal string)' },
-    dcaMultiplier: { type: 'string', description: '1e18-scaled DCA multiplier (decimal string)' },
+    dcaMultiplier: { type: 'string', description: '10000-scaled (bps) DCA multiplier as decimal string: "10000"-"30000" = x1.0-x3.0 ("15000" = x1.5). NOT 1e18-scaled' },
   };
 }
 
