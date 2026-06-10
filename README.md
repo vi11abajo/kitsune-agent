@@ -98,7 +98,7 @@ AI agent  →  Skills / MCP server / CLI  →  @kitsune-ai/agent-core  →  Kits
 | **Cross-chain bridging** | native USDC (Circle CCTP V2) and PROS (Chainlink CCIP) between Pharos and Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, BSC — same wallet as everything else |
 | **Market data** | prices, OHLCV candles, technical indicators (RSI/MACD/EMA/Bollinger), DODO pools, backtests |
 | **Vaults** | list, balances, allocations, create, withdraw |
-| **Strategies** | DCA / grid lifecycle — create, update, pause, resume, withdraw, plus trades, metrics & positions |
+| **Strategies** | guided DCA / grid / recurring creation — parameter recommendation from live market state, three risk tiers, backtest before gas — plus full lifecycle: update, pause, resume, withdraw, trades, metrics & positions |
 | **Portfolio** | aggregated PnL, vault activity, leaderboard |
 | **Marketplace** | browse, share, copy, and delist strategies |
 | **Self-custody** | keys stay local; SIWE + on-chain txs signed on your machine |
@@ -384,7 +384,7 @@ CLI; `kitsune-bridge` drives the chains directly via Foundry's `cast`.
 | `kitsune-bridge` | bridge USDC (Circle CCTP V2, 8 chains) and PROS (Chainlink CCIP) to/from Pharos; multi-chain balance checks; on-chain toolkit (deploy, airdrops, scripts) | key (signs locally; needs `cast` + `jq`) |
 | `kitsune-market` | prices, candles, indicators, DODO swap routes, backtests | none for reads |
 | `kitsune-vault` | list/balances/allocations, create, withdraw | sign-in / key |
-| `kitsune-strategy` | full DCA/grid lifecycle + off-chain config + trades & metrics | sign-in / key |
+| `kitsune-strategy` | guided strategy creation (market-state parameter recommendation → 3 risk tiers → backtest → create), ready-made presets (martingale DCA, RSI dip-buyer, neutral/trend grid, recurring), full lifecycle + trades & metrics | sign-in / key |
 | `kitsune-portfolio` | portfolio, activity, leaderboard | sign-in (leaderboard public) |
 | `kitsune-marketplace` | browse, share, copy, delist | public / sign-in |
 | `kitsune-executor` | list executors, details, job history | sign-in |
