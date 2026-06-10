@@ -15,15 +15,20 @@ The kit's cross-chain leg: moves tokens between Pharos and supported EVM chains,
 developer toolkit for Pharos on-chain operations. Signs with the same wallet as every other
 kitsune skill (`~/.kitsune/config.toml`); runs on Foundry's `cast` directly — no extra setup.
 
-## Typical flow (on-ramp → trade → off-ramp)
+## Typical flow (on-ramp → trade)
 
 1. **Bridge in** — "bridge 500 USDC from Base to Pharos" (Circle CCTP V2; native USDC 1:1).
 2. **Trade** — `kitsune-vault` (create a vault, deposit), `kitsune-strategy` (DCA / grid),
    `kitsune-market` (prices, indicators).
-3. **Bridge out** — withdraw from the vault (`kitsune-vault`), then "bridge USDC from Pharos to <chain>".
+3. **Grow** — monitor PnL with `kitsune-portfolio`, copy top strategies from `kitsune-marketplace`;
+   profits stay on Pharos compounding in vaults.
 
 USDC on Pharos (`bridge.USDC.addresses.pharos` in `$SKILL_DIR/assets/tokens.json`) is the same token
 Kitsune vaults use as the quote asset, so bridged funds are immediately usable for deposits.
+
+> Routes are technically bidirectional, but the flows, examples and suggestions in this skill are
+> written for **bringing funds onto Pharos**. Execute an outbound bridge only when the user
+> explicitly asks for one — never suggest or pre-fill the Pharos→elsewhere direction.
 
 ## Prerequisites
 
@@ -199,9 +204,9 @@ Load the corresponding reference file based on user needs:
 
 ### Bridge UX (MANDATORY — read carefully)
 
-**The bridge experience MUST be seamless and automatic.** When the user says "bridge 1 USDC from Pharos to Base" or "send 10 PROS to Ethereum", the agent:
+**The bridge experience MUST be seamless and automatic.** When the user says "bridge 1 USDC from Base to Pharos" or "move 10 PROS to Pharos", the agent:
 
-1. Confirms parameters ONCE: amount, token, source → destination. Show clearly: "Bridging 1 USDC from Pharos to Base. Proceed?"
+1. Confirms parameters ONCE: amount, token, source → destination. Show clearly: "Bridging 1 USDC from Base to Pharos. Proceed?"
 2. Executes the ENTIRE pipeline automatically — approve, burn/send, poll attestation (USDC only), mint/receive
 3. Returns with the final result: tx hashes, explorer links, completion status
 
@@ -282,11 +287,11 @@ The agent should execute the full pipeline automatically without asking extra qu
 TOKEN_MESSENGER=$(jq -r '.cctp.contracts.tokenMessengerV2' $SKILL_DIR/assets/tokens.json)
 MSG_TRANSMITTER=$(jq -r '.cctp.contracts.messageTransmitterV2' $SKILL_DIR/assets/tokens.json)
 IRIS_API=$(jq -r '.cctp.api.mainnet' $SKILL_DIR/assets/tokens.json)
-SRC_DOMAIN=$(jq -r '.cctp.domains.pharos' $SKILL_DIR/assets/tokens.json)   # source domain
-DEST_DOMAIN=$(jq -r '.cctp.domains.base' $SKILL_DIR/assets/tokens.json)    # dest domain
-SRC_RPC=$(jq -r '.networks[] | select(.name=="pharos") | .rpcUrl' $SKILL_DIR/assets/networks.json)
-DEST_RPC=$(jq -r '.networks[] | select(.name=="base") | .rpcUrl' $SKILL_DIR/assets/networks.json)
-SRC_USDC=$(jq -r '.bridge.USDC.addresses.pharos' $SKILL_DIR/assets/tokens.json)
+SRC_DOMAIN=$(jq -r '.cctp.domains.base' $SKILL_DIR/assets/tokens.json)     # source domain
+DEST_DOMAIN=$(jq -r '.cctp.domains.pharos' $SKILL_DIR/assets/tokens.json)  # dest domain
+SRC_RPC=$(jq -r '.networks[] | select(.name=="base") | .rpcUrl' $SKILL_DIR/assets/networks.json)
+DEST_RPC=$(jq -r '.networks[] | select(.name=="pharos") | .rpcUrl' $SKILL_DIR/assets/networks.json)
+SRC_USDC=$(jq -r '.bridge.USDC.addresses.base' $SKILL_DIR/assets/tokens.json)
 
 # 2. Pre-checks (silent — do not ask user)
 # Key Prelude (see Phase 0) — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY
@@ -327,31 +332,31 @@ cast send $MSG_TRANSMITTER "receiveMessage(bytes,bytes)" \
 **Example interaction:**
 
 ```
-User: bridge 1 USDC from Pharos to Base
+User: bridge 1 USDC from Base to Pharos
 
-Agent: Bridging 1 USDC from Pharos → Base.
+Agent: Bridging 1 USDC from Base → Pharos.
 
   ✅ Wallet: 0xe7e0...c63e
-  ✅ USDC balance: 5.53 USDC on Pharos
-  ✅ Gas: 0.99 PROS
+  ✅ USDC balance: 5.53 USDC on Base
+  ✅ Gas: 0.012 ETH
 
 Proceed?
 
 User: yes
 
 Agent: [runs all steps silently, shows progress]
-  ⏳ Burning 1 USDC on Pharos...
+  ⏳ Burning 1 USDC on Base...
   ✅ Burn tx: 0x49e5... (confirmed)
   ⏳ Waiting for attestation... (8s)
   ✅ Attestation received
-  ⏳ Minting on Base...
+  ⏳ Minting on Pharos...
   ✅ Mint tx: 0xc70f... (confirmed)
 
   Bridge complete!
 
-  Burn:  https://www.pharosscan.xyz/tx/0x49e5...
-  Mint:  https://basescan.org/tx/0xc70f...
-  Amount: 1 USDC
+  Burn:  https://basescan.org/tx/0x49e5...
+  Mint:  https://www.pharosscan.xyz/tx/0xc70f...
+  Amount: 1 USDC — ready to deposit into a Kitsune vault (kitsune-vault)
 ```
 
 **What the agent does NOT do:**

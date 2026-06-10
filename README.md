@@ -61,10 +61,9 @@ It ships as **three standalone pieces around one shared core**, mirroring the OK
 | **`@kitsune-ai/agent-cli`** (`kitsune`) | A terminal CLI. Works with shell pipes, cron, and scripts — no AI client needed. Also the runtime behind the Skills. |
 | **`@kitsune-ai/agent-core`** | The shared library: config, REST client (SIWE/JWT), viem chain layer, and the single tool catalog used by both the MCP server and the CLI. |
 
-Plus **10 plug-and-play Skills** for clients that support the Agent Skills protocol — covering the
-full loop out of the box: bridge funds onto Pharos (`kitsune-bridge`, Circle CCTP V2 / Chainlink
-CCIP), trade them (vaults, strategies, market data), and bridge back out. One wallet, one config,
-one kit.
+Plus **10 plug-and-play Skills** for clients that support the Agent Skills protocol — from funding
+to trading out of the box: bridge funds onto Pharos (`kitsune-bridge`, Circle CCTP V2 / Chainlink
+CCIP) and put them to work (vaults, strategies, market data). One wallet, one config, one kit.
 
 ### Architecture
 

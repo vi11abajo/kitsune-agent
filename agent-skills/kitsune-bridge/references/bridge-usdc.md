@@ -218,7 +218,7 @@ cast call $DEST_USDC \
   --rpc-url $DEST_RPC
 ```
 
-## Complete Example: 1 USDC Pharos → Base
+## Complete Example: 1 USDC Base → Pharos
 
 ```bash
 # Config
@@ -227,41 +227,41 @@ CFG="$HOME/.kitsune/config.toml"
 PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
 PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
-RPC_PHAROS="https://rpc.pharos.xyz"
 RPC_BASE="https://mainnet.base.org"
+RPC_PHAROS="https://rpc.pharos.xyz"
 TOKEN_MESSENGER="0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d"
 MSG_TRANSMITTER="0x81D40F21F12A8F0E3252Bccb954D722d4c464B64"
-USDC_PHAROS="0xc879c018db60520f4355c26ed1a6d572cdac1815"
+USDC_BASE="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 IRIS_API="https://iris-api.circle.com/v2/messages"
 AMOUNT=1000000
 
-# 1. Approve
-cast send $USDC_PHAROS "approve(address,uint256)" $TOKEN_MESSENGER $AMOUNT \
-  --rpc-url $RPC_PHAROS --private-key $PRIVATE_KEY
+# 1. Approve (on Base)
+cast send $USDC_BASE "approve(address,uint256)" $TOKEN_MESSENGER $AMOUNT \
+  --rpc-url $RPC_BASE --private-key $PRIVATE_KEY
 
-# 2. Burn
+# 2. Burn (on Base; 31 = Pharos CCTP destination domain)
 MINT_RECIPIENT="0x000000000000000000000000${ADDRESS:2}"
 cast send $TOKEN_MESSENGER \
   "depositForBurn(uint256,uint32,bytes32,address,bytes32,uint256,uint32)" \
-  $AMOUNT 6 $MINT_RECIPIENT $USDC_PHAROS \
+  $AMOUNT 31 $MINT_RECIPIENT $USDC_BASE \
   "0x0000000000000000000000000000000000000000000000000000000000000000" \
   500 1000 \
-  --rpc-url $RPC_PHAROS --private-key $PRIVATE_KEY
+  --rpc-url $RPC_BASE --private-key $PRIVATE_KEY
 # Save TX_HASH from output
 
-# 3. Poll attestation
+# 3. Poll attestation (6 = Base CCTP source domain)
 for i in $(seq 1 60); do
-  RESP=$(curl -s "$IRIS_API/31?transactionHash=$TX_HASH")
+  RESP=$(curl -s "$IRIS_API/6?transactionHash=$TX_HASH")
   [ "$(echo $RESP | jq -r '.messages[0].status')" = "complete" ] && break
   sleep 5
 done
 MESSAGE=$(echo $RESP | jq -r '.messages[0].message')
 ATTESTATION=$(echo $RESP | jq -r '.messages[0].attestation')
 
-# 4. Mint on Base
+# 4. Mint on Pharos
 cast send $MSG_TRANSMITTER "receiveMessage(bytes,bytes)" \
   "$MESSAGE" "$ATTESTATION" \
-  --rpc-url $RPC_BASE --private-key $PRIVATE_KEY
+  --rpc-url $RPC_PHAROS --private-key $PRIVATE_KEY
 ```
 
 ## Error Handling

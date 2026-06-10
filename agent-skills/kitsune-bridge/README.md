@@ -1,7 +1,7 @@
 # Kitsune Bridge — native cross-chain via Circle CCTP & Chainlink CCIP
 
 **The cross-chain leg of the [Kitsune Agent Trade Kit](https://github.com/vi11abajo/kitsune-agent):
-bridge funds onto Pharos, trade with the other kitsune skills, bridge back out — one wallet, one kit.
+bridge funds onto Pharos and put them to work with the other kitsune skills — one wallet, one kit.
 No aggregators, no wrappers, no middlemen.**
 
 ## The Problem with Aggregator Bridges
@@ -72,19 +72,19 @@ Pharos ↔ Base, Ethereum
 ## Usage Examples
 
 ```
-"Bridge 1 USDC from Pharos to Base"
-"Transfer 10 PROS from Pharos to Ethereum"
+"Bridge 1 USDC from Base to Pharos"
+"Transfer 10 PROS from Ethereum to Pharos"
 "Move 500 USDC from Arbitrum to Pharos"
 "Check balances on all networks"
 ```
 
 ## One kit, one wallet
 
-The bridge is part of the kit's end-to-end flow — bridge in, trade, bridge out:
+The bridge is the funding leg of the kit's flow — bridge in, deposit, grow:
 
 1. `kitsune-bridge` — "bridge 500 USDC from Base to Pharos"
 2. `kitsune-vault` / `kitsune-strategy` — deposit, launch a DCA or grid strategy
-3. `kitsune-bridge` — "bridge USDC from Pharos to Base"
+3. `kitsune-portfolio` / `kitsune-marketplace` — track PnL, copy top strategies, compound on Pharos
 
 It signs with the **same wallet as every other kitsune skill**, reading the key from
 `~/.kitsune/config.toml` (the kit's standard config) or the `KITSUNE_PRIVATE_KEY` env var — nothing
