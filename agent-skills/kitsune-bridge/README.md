@@ -1,6 +1,8 @@
-# Native Pharos Bridge via Circle CCTP & Chainlink CCIP
+# Kitsune Bridge — native cross-chain via Circle CCTP & Chainlink CCIP
 
-**Direct-protocol bridge for Pharos Network — no aggregators, no wrappers, no middlemen.**
+**The cross-chain leg of the [Kitsune Agent Trade Kit](https://github.com/vi11abajo/kitsune-agent):
+bridge funds onto Pharos, trade with the other kitsune skills, bridge back out — one wallet, one kit.
+No aggregators, no wrappers, no middlemen.**
 
 ## The Problem with Aggregator Bridges
 
@@ -12,9 +14,9 @@ Most bridge skills route through aggregators like Jumper or LI.FI. That sounds c
 
 ## Our Approach: Direct Protocol Calls
 
-**pharos-bridge talks directly to the source protocols** — Circle CCTP V2 for USDC and Chainlink CCIP for PROS. No middleman, no wrapper contracts, no routing surprises.
+**kitsune-bridge talks directly to the source protocols** — Circle CCTP V2 for USDC and Chainlink CCIP for PROS. No middleman, no wrapper contracts, no routing surprises.
 
-| | Aggregator Bridge | pharos-bridge |
+| | Aggregator Bridge | kitsune-bridge |
 |---|---|---|
 | **USDC** | Routed through intermediary | Circle CCTP V2 — native 1:1 burn-and-mint |
 | **PROS** | Not supported by aggregators | Chainlink CCIP — direct Router, Lock/Release + Burn/Mint |
@@ -76,27 +78,30 @@ Pharos ↔ Base, Ethereum
 "Check balances on all networks"
 ```
 
-## Use with Kitsune
+## One kit, one wallet
 
-This skill ships with the [Kitsune Agent Trade Kit](https://github.com/vi11abajo/kitsune-agent) as the
-funding on-ramp: bridge USDC from any major chain onto Pharos, then use the `kitsune-vault` /
-`kitsune-strategy` skills to deposit and trade. The USDC it bridges to Pharos
-(`0xC879…1815`) is the same token Kitsune vaults use as the quote asset.
+The bridge is part of the kit's end-to-end flow — bridge in, trade, bridge out:
 
-It is fully seamless: the skill signs with the **same wallet as the rest of the kit**, reading the key
-from `~/.kitsune/config.toml` (the agent's default profile) or the `KITSUNE_PRIVATE_KEY` env var — no
-separate key file to configure.
+1. `kitsune-bridge` — "bridge 500 USDC from Base to Pharos"
+2. `kitsune-vault` / `kitsune-strategy` — deposit, launch a DCA or grid strategy
+3. `kitsune-bridge` — "bridge USDC from Pharos to Base"
+
+It signs with the **same wallet as every other kitsune skill**, reading the key from
+`~/.kitsune/config.toml` (the kit's standard config) or the `KITSUNE_PRIVATE_KEY` env var — nothing
+extra to configure. The USDC it lands on Pharos (`0xC879…1815`) is the exact token Kitsune vaults
+use as the quote asset.
 
 ## Installation
 
-This skill lives in the kitsune-agent repo under `agent-skills/pharos-bridge/`.
+The skill lives in the kitsune-agent repo under `agent-skills/kitsune-bridge/`, alongside the other
+nine kitsune skills.
 
 ### Option 1: Agent Prompt (Recommended)
 
 Tell your AI agent:
 
 ```
-Install the pharos-bridge skill from https://github.com/vi11abajo/kitsune-agent (agent-skills/pharos-bridge)
+Install the kitsune-bridge skill from https://github.com/vi11abajo/kitsune-agent (agent-skills/kitsune-bridge)
 ```
 
 The agent will clone the repo and copy the skill into your skills directory.
@@ -105,7 +110,7 @@ The agent will clone the repo and copy the skill into your skills directory.
 
 ```bash
 git clone https://github.com/vi11abajo/kitsune-agent.git
-cp -r kitsune-agent/agent-skills/pharos-bridge ~/.claude/skills/pharos-bridge
+cp -r kitsune-agent/agent-skills/kitsune-bridge ~/.claude/skills/kitsune-bridge
 ```
 
 Skill files: `SKILL.md`, `assets/`, `references/`.
@@ -126,8 +131,3 @@ Skill files: `SKILL.md`, `assets/`, `references/`.
 ## License
 
 MIT
-
-## Credits
-
-Originally published as `goods-locomotive/pharos-bridge` by Locomotive (MIT); integrated into the
-Kitsune Agent Trade Kit as the cross-chain on-ramp skill.

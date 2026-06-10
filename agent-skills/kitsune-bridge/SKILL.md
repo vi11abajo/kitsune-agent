@@ -1,47 +1,29 @@
 ---
-name: pharos-bridge
-description: >
-  Direct-protocol cross-chain bridge for Pharos Network — Circle CCTP V2 for native USDC
-  (burn-and-mint, no aggregators, no wrapped tokens, 1:1) and Chainlink CCIP for PROS
-  (direct Router calls, no wrappers). Bridges tokens between Pharos and 7 EVM chains
-  (Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, BSC) with automated full-lifecycle
-  pipeline: pre-checks, approve, burn/send, attestation polling, mint/receive, unwrap — all
-  from a single user confirmation. Multi-network balance queries across all chains in one
-  command. Complete on-chain toolkit: transactions, contract deployment/verification, batch
-  airdrops with Merkle-tree whitelist, holder analytics, and auto-generated interaction scripts
-  (JS/TS/Python). The on-ramp for Kitsune: bridge USDC from any major chain onto Pharos, then
-  fund vaults and strategies with the kitsune-vault / kitsune-strategy skills. Invoke on
-  "bridge", "cross-chain", "Pharos", "PROS", "USDC", "check balances", or any on-chain
-  operation. Do NOT use for Kitsune vaults/strategies themselves (kitsune-vault,
-  kitsune-strategy) or market data (kitsune-market).
+name: kitsune-bridge
+description: "Use this skill when the user wants to move funds between Pharos and other EVM chains: bridge USDC (Circle CCTP V2, native 1:1 burn-and-mint — Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, BSC) or PROS (Chainlink CCIP — Base, Ethereum) to/from Pharos, check wallet balances across all chains, or run raw Pharos on-chain operations (transfers, contract deploy/verify, batch airdrops, generated interaction scripts). The full pipeline — approve, burn/send, attestation polling, mint/receive — runs from a single confirmation, signing with the same wallet as the rest of the kit (~/.kitsune/config.toml). Invoke on \"bridge\", \"cross-chain\", \"move/deposit funds to Pharos\", \"check balances on all networks\". Do NOT use for vault management (kitsune-vault), strategies (kitsune-strategy), or market data (kitsune-market)."
 license: MIT
 metadata:
   author: kitsune
-  version: "2.0.0"
+  version: "0.2.2"
   agent:
     requires: { bins: ["cast", "jq"] }
 ---
 
-# Pharos Bridge & Chain Skill
+# Kitsune Bridge
 
-Cross-chain bridge for moving tokens between Pharos and supported EVM chains, plus full developer toolkit for Pharos on-chain operations.
+The kit's cross-chain leg: moves tokens between Pharos and supported EVM chains, plus a full
+developer toolkit for Pharos on-chain operations. Signs with the same wallet as every other
+kitsune skill (`~/.kitsune/config.toml`); runs on Foundry's `cast` directly — no extra setup.
 
-## Use with Kitsune (on-ramp)
+## Typical flow (on-ramp → trade → off-ramp)
 
-This skill is the funding on-ramp for the Kitsune trading skills. Typical flow:
-
-1. **Bridge in** — "bridge 500 USDC from Base to Pharos" (this skill, Circle CCTP V2; native USDC 1:1).
-2. **Trade** — once USDC is on Pharos, switch to the Kitsune skills: `kitsune-vault` (create a vault,
-   deposit), `kitsune-strategy` (DCA / grid), `kitsune-market` (prices, indicators).
+1. **Bridge in** — "bridge 500 USDC from Base to Pharos" (Circle CCTP V2; native USDC 1:1).
+2. **Trade** — `kitsune-vault` (create a vault, deposit), `kitsune-strategy` (DCA / grid),
+   `kitsune-market` (prices, indicators).
 3. **Bridge out** — withdraw from the vault (`kitsune-vault`), then "bridge USDC from Pharos to <chain>".
 
-Notes:
-- This skill signs with the **same wallet as the rest of the kit**: the key is read from
-  `~/.kitsune/config.toml` (the agent's default profile) or the `KITSUNE_PRIVATE_KEY` env var.
-  No separate key store — if the Kitsune agent is configured, bridging works immediately.
-- USDC on Pharos is at `bridge.USDC.addresses.pharos` in `$SKILL_DIR/assets/tokens.json` — the same
-  token Kitsune vaults use as the quote asset.
-- This skill talks to chains directly via `cast`; it does not use the `kitsune` CLI.
+USDC on Pharos (`bridge.USDC.addresses.pharos` in `$SKILL_DIR/assets/tokens.json`) is the same token
+Kitsune vaults use as the quote asset, so bridged funds are immediately usable for deposits.
 
 ## Prerequisites
 
@@ -65,7 +47,7 @@ This phase runs automatically every time the skill is invoked.
 
 All config files (`assets/tokens.json`, `assets/networks.json`, airdrop contracts) live inside this
 skill's own directory. Determine `SKILL_DIR` = the **absolute path of the directory containing this
-SKILL.md** (e.g. `~/.claude/skills/pharos-bridge` or `<repo>/agent-skills/pharos-bridge`, depending
+SKILL.md** (e.g. `~/.claude/skills/kitsune-bridge` or `<repo>/agent-skills/kitsune-bridge`, depending
 on where the skill is installed).
 
 Shell state does NOT persist between Bash tool calls — re-use the absolute value (or re-derive it)
@@ -465,7 +447,7 @@ CFG="$HOME/.kitsune/config.toml"
 PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
 PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 
-SKILL_DIR=/absolute/path/to/pharos-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
+SKILL_DIR=/absolute/path/to/kitsune-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
 
 # Helper: cast call with retry — returns balance or "rpc_err"

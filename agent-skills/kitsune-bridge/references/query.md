@@ -442,7 +442,7 @@ CFG="$HOME/.kitsune/config.toml"
 PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
 PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 
-SKILL_DIR=/absolute/path/to/pharos-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
+SKILL_DIR=/absolute/path/to/kitsune-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
 
 erc20_balance() {
@@ -489,7 +489,7 @@ CFG="$HOME/.kitsune/config.toml"
 PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
 PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 
-SKILL_DIR=/absolute/path/to/pharos-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
+SKILL_DIR=/absolute/path/to/kitsune-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
 NET="pharos"
 RPC=$(jq -r ".networks[] | select(.name==\"$NET\") | .rpcUrl" $SKILL_DIR/assets/networks.json)
