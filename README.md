@@ -380,7 +380,7 @@ talks to the chains directly via Foundry's `cast`.
 
 | Skill | Covers | Credentials |
 |---|---|---|
-| `pharos-bridge` | cross-chain on-ramp: bridge USDC (Circle CCTP V2, 8 chains) and PROS (Chainlink CCIP) to/from Pharos; multi-chain balance checks; on-chain toolkit (deploy, airdrops, scripts) | key in local `.env` (needs `cast` + `jq`) |
+| `pharos-bridge` | cross-chain on-ramp: bridge USDC (Circle CCTP V2, 8 chains) and PROS (Chainlink CCIP) to/from Pharos; multi-chain balance checks; on-chain toolkit (deploy, airdrops, scripts) | same key as the kit (`~/.kitsune/config.toml`); needs `cast` + `jq` |
 | `kitsune-market` | prices, candles, indicators, DODO swap routes, backtests | none for reads |
 | `kitsune-vault` | list/balances/allocations, create, withdraw | sign-in / key |
 | `kitsune-strategy` | full DCA/grid lifecycle + off-chain config + trades & metrics | sign-in / key |

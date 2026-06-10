@@ -70,10 +70,13 @@ IRIS_API=$(jq -r '.cctp.api.mainnet' $TOKENS)
 ## Step 2: Pre-flight Checks
 
 ```bash
-set -a && source /absolute/path/to/.env && set +a
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 
 # Verify private key
-[ -n "$PRIVATE_KEY" ] && echo "PRIVATE_KEY: set" || { echo "PRIVATE_KEY: not set"; exit 1; }
+[ -n "$PRIVATE_KEY" ] && echo "key: loaded" || { echo "key: not found — see SKILL.md Phase 0 (~/.kitsune/config.toml)"; exit 1; }
 
 # Derive wallet address
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
@@ -219,7 +222,10 @@ cast call $DEST_USDC \
 
 ```bash
 # Config
-set -a && source /absolute/path/to/.env && set +a
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
 RPC_PHAROS="https://rpc.pharos.xyz"
 RPC_BASE="https://mainnet.base.org"

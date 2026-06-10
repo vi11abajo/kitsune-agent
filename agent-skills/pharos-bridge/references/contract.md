@@ -4,7 +4,7 @@ This file contains detailed instructions for all contract operations on the Phar
 
 > **Network Configuration**: The `<rpc>` parameter in all commands is read from the corresponding network's `rpcUrl` field in `assets/networks.json`. Defaults to Pharos mainnet. **The `--rpc-url` parameter must be explicitly passed**, otherwise `forge` / `cast` will default to connecting to `localhost:8545`, causing connection failure.
 >
-> **Private Key Configuration**: All write operations must explicitly pass the private key via the `--private-key` parameter. Recommended to use environment variable: `--private-key $PRIVATE_KEY`. `forge` / `cast` do not automatically read environment variables; they must be explicitly referenced in the command.
+> **Private Key Configuration**: All write operations must explicitly pass the private key via the `--private-key` parameter. Load `$PRIVATE_KEY` with the Key Prelude from SKILL.md Phase 0 (reads `~/.kitsune/config.toml` / `KITSUNE_PRIVATE_KEY`) and pass `--private-key $PRIVATE_KEY`. `forge` / `cast` do not automatically read environment variables; they must be explicitly referenced in the command.
 
 ---
 

@@ -806,7 +806,7 @@ Set private key environment variable:
 
 ```
 ⚠️ Security Reminder: Never hardcode private keys in scripts, and never commit files containing private keys to version control systems (e.g., Git).
-It's recommended to store private keys in a .env file and ensure .env is added to .gitignore.
+For one-off runs, pass the key via the PRIVATE_KEY environment variable (e.g. export it from the Kitsune agent config `~/.kitsune/config.toml` using the Key Prelude in SKILL.md Phase 0). Never hardcode keys in generated scripts or commit them to git.
 ```
 
 ---

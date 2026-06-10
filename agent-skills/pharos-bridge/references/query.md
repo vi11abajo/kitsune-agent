@@ -437,7 +437,10 @@ Run as ONE bash tool call. Adapt the `for NET in ...` line to what the user aske
 - Single network: skip the loop, run 2 cast calls directly
 
 ```bash
-set -a && source $ENV_FILE && set +a
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 
 SKILL_DIR=/absolute/path/to/pharos-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
@@ -481,16 +484,20 @@ done
 When user asks for one specific network, skip the loop:
 
 ```bash
-set -a && source $ENV_FILE && set +a && \
-SKILL_DIR=/absolute/path/to/pharos-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0 && \
-ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY) && \
-NET="pharos" && \
-RPC=$(jq -r ".networks[] | select(.name==\"$NET\") | .rpcUrl" $SKILL_DIR/assets/networks.json) && \
-SYM=$(jq -r ".networks[] | select(.name==\"$NET\") | .nativeToken" $SKILL_DIR/assets/networks.json) && \
-USDC_A=$(jq -r ".bridge.USDC.addresses.$NET // empty" $SKILL_DIR/assets/tokens.json) && \
-NAT=$(cast balance $ADDRESS --rpc-url $RPC --ether 2>/dev/null) && \
-RAW=$(cast call $USDC_A "balanceOf(address)(uint256)" $ADDRESS --rpc-url $RPC 2>/dev/null || echo "0") && \
-USDC=$(echo "$RAW" | awk '{printf "%.2f", $1/1000000}') && \
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
+
+SKILL_DIR=/absolute/path/to/pharos-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
+ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
+NET="pharos"
+RPC=$(jq -r ".networks[] | select(.name==\"$NET\") | .rpcUrl" $SKILL_DIR/assets/networks.json)
+SYM=$(jq -r ".networks[] | select(.name==\"$NET\") | .nativeToken" $SKILL_DIR/assets/networks.json)
+USDC_A=$(jq -r ".bridge.USDC.addresses.$NET // empty" $SKILL_DIR/assets/tokens.json)
+NAT=$(cast balance $ADDRESS --rpc-url $RPC --ether 2>/dev/null)
+RAW=$(cast call $USDC_A "balanceOf(address)(uint256)" $ADDRESS --rpc-url $RPC 2>/dev/null || echo "0")
+USDC=$(echo "$RAW" | awk '{printf "%.2f", $1/1000000}')
 echo "$NET: $NAT $SYM | $USDC USDC"
 ```
 

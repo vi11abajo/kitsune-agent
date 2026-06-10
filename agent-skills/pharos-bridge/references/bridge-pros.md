@@ -124,7 +124,10 @@ TOKENS="$SKILL_DIR/assets/tokens.json"
 NETWORKS="$SKILL_DIR/assets/networks.json"
 
 # Source env
-set -a && source $ENV_FILE && set +a
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
 
 # Read configs — ALWAYS lowercase addresses for tuple encoding
@@ -231,7 +234,10 @@ Fee is returned in wei of native token. For Pharos→Base: ~0.257 PROS (confirme
 
 ```bash
 # Source env and config
-set -a && source $ENV_FILE && set +a
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 TOKENS="$SKILL_DIR/assets/tokens.json"
 NETWORKS="$SKILL_DIR/assets/networks.json"
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
@@ -263,7 +269,10 @@ cast send $ROUTER_BASE \
 ### Complete Script: Ethereum → Pharos
 
 ```bash
-set -a && source $ENV_FILE && set +a
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 TOKENS="$SKILL_DIR/assets/tokens.json"
 NETWORKS="$SKILL_DIR/assets/networks.json"
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
@@ -294,7 +303,10 @@ cast send $ROUTER_ETH \
 ### Complete Script: Pharos → Base
 
 ```bash
-set -a && source $ENV_FILE && set +a
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 TOKENS="$SKILL_DIR/assets/tokens.json"
 NETWORKS="$SKILL_DIR/assets/networks.json"
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
@@ -327,7 +339,10 @@ cast send $ROUTER_PHAROS \
 ### Complete Script: Pharos → Ethereum
 
 ```bash
-set -a && source $ENV_FILE && set +a
+# Key Prelude — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY (see SKILL.md Phase 0)
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 TOKENS="$SKILL_DIR/assets/tokens.json"
 NETWORKS="$SKILL_DIR/assets/networks.json"
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)

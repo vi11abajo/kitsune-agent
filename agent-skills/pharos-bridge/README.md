@@ -83,6 +83,10 @@ funding on-ramp: bridge USDC from any major chain onto Pharos, then use the `kit
 `kitsune-strategy` skills to deposit and trade. The USDC it bridges to Pharos
 (`0xC879…1815`) is the same token Kitsune vaults use as the quote asset.
 
+It is fully seamless: the skill signs with the **same wallet as the rest of the kit**, reading the key
+from `~/.kitsune/config.toml` (the agent's default profile) or the `KITSUNE_PRIVATE_KEY` env var — no
+separate key file to configure.
+
 ## Installation
 
 This skill lives in the kitsune-agent repo under `agent-skills/pharos-bridge/`.

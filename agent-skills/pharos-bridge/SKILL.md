@@ -36,8 +36,9 @@ This skill is the funding on-ramp for the Kitsune trading skills. Typical flow:
 3. **Bridge out** — withdraw from the vault (`kitsune-vault`), then "bridge USDC from Pharos to <chain>".
 
 Notes:
-- The Kitsune skills keep their key in `~/.kitsune/config.toml`; this skill reads `PRIVATE_KEY` from a
-  local `.env`. Use the same wallet in both so bridged funds land where Kitsune expects them.
+- This skill signs with the **same wallet as the rest of the kit**: the key is read from
+  `~/.kitsune/config.toml` (the agent's default profile) or the `KITSUNE_PRIVATE_KEY` env var.
+  No separate key store — if the Kitsune agent is configured, bridging works immediately.
 - USDC on Pharos is at `bridge.USDC.addresses.pharos` in `$SKILL_DIR/assets/tokens.json` — the same
   token Kitsune vaults use as the quote asset.
 - This skill talks to chains directly via `cast`; it does not use the `kitsune` CLI.
@@ -70,86 +71,60 @@ on where the skill is installed).
 Shell state does NOT persist between Bash tool calls — re-use the absolute value (or re-derive it)
 in EVERY command that reads `$SKILL_DIR/assets/...`.
 
-### Step 0.1: Environment File Setup
+### Step 0.1: Load the Wallet Key from the Kitsune Agent Config (KEY PRELUDE)
 
-**Determine project root:**
+This skill uses the **same wallet as the rest of the Kitsune Agent Trade Kit** — no separate key file.
+The key is resolved in this order:
+
+1. `KITSUNE_PRIVATE_KEY` environment variable (if set)
+2. `private_key` of the **default profile** in `~/.kitsune/config.toml` (the kit's standard config)
+
+The **Key Prelude** below loads it. Because shell state does NOT persist between Bash tool calls,
+**prepend this prelude to EVERY command that signs or sends a transaction**:
 
 ```bash
-PROJECT_ROOT=$(pwd)
-ENV_FILE="$PROJECT_ROOT/.env"
+# ── Key Prelude (load PRIVATE_KEY from the Kitsune agent config) ──
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
+# ──────────────────────────────────────────────────────────────────
 ```
 
-The agent MUST determine the absolute path to the project root once and reuse it for ALL subsequent commands. Store `ENV_FILE` as the absolute path to `.env`.
+To use a different profile's key (e.g. a dedicated bridging wallet), the user can say so — set
+`KITSUNE_PROFILE=<name>` in the prelude's first line or export `KITSUNE_PRIVATE_KEY`.
 
-1. Check if `.env` exists at the project root:
+### Step 0.2: Verify the Key Is Available
 
-```bash
-[ -f "$ENV_FILE" ] && echo ".env exists at: $ENV_FILE" || echo ".env not found"
-```
-
-2. If `.env` does NOT exist, create it:
+Run the Key Prelude, then check. **ONLY output "loaded" or "not found" — never the actual value.**
 
 ```bash
-cat > "$ENV_FILE" << 'ENVEOF'
-# ============================================
-# Pharos Bridge — Environment Variables
-# ============================================
-# Fill in your values below. NEVER share this file or commit it to git.
-# ============================================
-
-# Your wallet private key (without 0x prefix)
-# SECURITY: Edit this file directly. Do NOT paste your key in chat.
-# How to export from MetaMask: Account Details → Show Private Key
-PRIVATE_KEY=
-ENVEOF
-echo ".env created at: $ENV_FILE"
-```
-
-3. Ensure `.env` is in `.gitignore`:
-
-```bash
-GITIGNORE="$PROJECT_ROOT/.gitignore"
-[ -f "$GITIGNORE" ] && grep -qxF '.env' "$GITIGNORE" || echo '.env' >> "$GITIGNORE"
-```
-
-**CRITICAL — Shell state does NOT persist between Bash tool calls.** Every command MUST:
-- Source `.env` using the **absolute path**: `set -a && source $ENV_FILE && set +a && ...rest...`
-- NEVER use relative `source .env` — it breaks if CWD changes
-- The `$ENV_FILE` variable does NOT persist either — the agent MUST re-determine or hardcode the absolute path in every command
-
-### Step 0.2: Verify Private Key
-
-Check if PRIVATE_KEY is set. **ONLY output "set" or "not set" — never the actual value.**
-
-```bash
-set -a && source $ENV_FILE && set +a && [ -n "$PRIVATE_KEY" ] && echo "PRIVATE_KEY: set" || echo "PRIVATE_KEY: not set"
+# (Key Prelude here)
+[ -n "$PRIVATE_KEY" ] && echo "key: loaded (profile: $PROFILE)" || echo "key: not found"
 ```
 
 **FORBIDDEN COMMANDS — NEVER RUN THESE:**
 ```
-cat .env
+cat ~/.kitsune/config.toml
+grep private_key ~/.kitsune/config.toml
 echo $PRIVATE_KEY
-printenv PRIVATE_KEY
-head .env
-grep PRIVATE_KEY .env
+printenv PRIVATE_KEY | KITSUNE_PRIVATE_KEY
 ```
 Any command that would output the private key value to chat is ABSOLUTELY FORBIDDEN.
 
-If not set, guide the user:
+If not found, guide the user to set up the standard kit config (same one used by the `kitsune` CLI
+and the other kitsune-* skills):
 
 ```
-Please open the .env file and add your private key:
-  File: {absolute_path_to_.env}
+Please add your private key to the Kitsune agent config:
+  File: ~/.kitsune/config.toml
 
-Set: PRIVATE_KEY=your_key_here (with or without 0x prefix)
+    default_profile = "mainnet"
 
-NEVER paste keys in chat.
-```
+    [profiles.mainnet]
+    private_key = "0x..."
 
-After the user confirms they filled in the key, normalize it (strip 0x prefix if present):
-
-```bash
-sed -i 's/^PRIVATE_KEY=0[xX]\(.*\)/PRIVATE_KEY=\1/' "$ENV_FILE"
+(or export KITSUNE_PRIVATE_KEY). NEVER paste keys in chat.
+Restrict the file to your user only: chmod 600 ~/.kitsune/config.toml
 ```
 
 ### Step 0.3: Check Dependencies (quick check)
@@ -165,17 +140,21 @@ If `cast` not found → offer to install Foundry. If `jq` not found → ask user
 
 1. **NEVER** output, display, echo, print, cat, grep, or log the value of PRIVATE_KEY or any secret
 2. **NEVER** ask the user to paste private keys or secrets in chat
-3. **NEVER** run `cat .env`, `echo $PRIVATE_KEY`, `printenv`, `grep PRIVATE_KEY`, or any command that could leak secrets to chat output
-4. **ALWAYS** check .env with safe commands only: `[ -n "$PRIVATE_KEY" ] && echo "set" || echo "not set"`
-5. **ALWAYS** show the full absolute path to the `.env` file so the user can find it
+3. **NEVER** run `cat ~/.kitsune/config.toml`, `grep private_key`, `echo $PRIVATE_KEY`, `printenv`, or any command that could leak secrets to chat output
+4. **ALWAYS** check the key with safe commands only: `[ -n "$PRIVATE_KEY" ] && echo "loaded" || echo "not found"`
+5. **ALWAYS** point the user at `~/.kitsune/config.toml` (the standard kit config) when the key is missing
 6. If the user accidentally pastes a secret in chat — warn immediately, suggest rotating the key
 
 ## Shell State Note (CRITICAL)
 
-Shell state does NOT persist between Bash tool calls. EVERY command that uses env vars MUST source `.env` with the **absolute path** determined in Step 0.1:
+Shell state does NOT persist between Bash tool calls. EVERY command that signs or sends MUST start
+with the **Key Prelude** from Step 0.1 (it re-reads `~/.kitsune/config.toml` each time):
 
 ```bash
-set -a && source /absolute/path/to/.env && set +a && ...rest of command...
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
+...rest of command...
 ```
 
 ## Supported Bridge Chains
@@ -257,7 +236,7 @@ Load the corresponding reference file based on user needs:
 1. **Parse request** — identify: amount, source chain, destination chain
 2. **Validate route** — check supported chains table
 3. **Read configs** — load all addresses from `assets/tokens.json` (cctp section)
-4. **Pre-checks** (silent) — source .env, verify key, derive address, check balances
+4. **Pre-checks** (silent) — run the Key Prelude, verify key, derive address, check balances
 5. **Approve** — approve USDC to TokenMessengerV2 (skip if allowance sufficient)
 6. **Burn** — depositForBurn with CCTP domain IDs (NOT chain IDs), bytes32 recipient, maxFee=500, minFinalityThreshold=1000
 7. **Poll attestation** — Circle Iris API until status="complete" (auto-poll, up to 5 min)
@@ -270,7 +249,7 @@ Load the corresponding reference file based on user needs:
 2. **Validate route** — check supported chains (Pharos↔Base, Pharos↔Ethereum)
 3. **Read configs** — load CCIP routers, selectors, token pools from `assets/tokens.json` (ccip section). **ALL addresses MUST be lowercased for tuple encoding**: `jq ... | tr '[:upper:]' '[:lower:]'`
 4. **Verify network** — `cast chain-id --rpc-url $RPC` must match expected chain ID from networks.json. This prevents sending to testnet by mistake
-5. **Pre-checks** (silent) — source .env, verify key, derive address, check balances
+5. **Pre-checks** (silent) — run the Key Prelude, verify key, derive address, check balances
 6. **Wrap** — if sending FROM Pharos: deposit() PROS → WPROS
 7. **Approve** — approve WPROS/PROS to CCIP Router
 8. **Estimate fee** — getFee() to determine ccipSend value
@@ -328,7 +307,10 @@ DEST_RPC=$(jq -r '.networks[] | select(.name=="base") | .rpcUrl' $SKILL_DIR/asse
 SRC_USDC=$(jq -r '.bridge.USDC.addresses.pharos' $SKILL_DIR/assets/tokens.json)
 
 # 2. Pre-checks (silent — do not ask user)
-set -a && source $ENV_FILE && set +a
+# Key Prelude (see Phase 0) — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
 # Check USDC balance + gas balance...
 
@@ -478,7 +460,10 @@ When the user asks "check balances", "show balances", "check all balances" — r
 Run as ONE bash tool call. The `for NET in ...` line adapts to what the user asked:
 
 ```bash
-set -a && source $ENV_FILE && set +a
+# Key Prelude (see Phase 0) — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 
 SKILL_DIR=/absolute/path/to/pharos-bridge   # dir containing this SKILL.md — see SKILL.md Phase 0
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
@@ -569,7 +554,7 @@ Before executing commands, the Agent should perform pre-checks; when commands fa
 
 ## Security Reminders
 
-- **Private Key Protection**: The private key is stored ONLY in the `.env` file. It is NEVER exposed in chat, logs, or version control. All `cast`/`forge` commands reference it via `--private-key $PRIVATE_KEY` after sourcing `.env`.
+- **Private Key Protection**: The private key lives ONLY in `~/.kitsune/config.toml` (the shared Kitsune agent config) or the `KITSUNE_PRIVATE_KEY` env var. It is NEVER exposed in chat, logs, or version control. All `cast`/`forge` commands reference it via `--private-key $PRIVATE_KEY` after running the Key Prelude.
 - **One Confirmation Rule**: For bridge operations, confirm parameters ONCE (amount, token, source → destination) then execute the entire pipeline. Do NOT ask for confirmation at each step.
 - **Mainnet Warning**: If the user explicitly says "mainnet" or the operation is clearly on mainnet, show a one-line warning. If the user specified the network themselves, skip the warning — they know what they're doing.
 - **CCTP Domain IDs**: Always use CCTP Domain IDs (from `cctp.domains`), NOT EVM Chain IDs. Using chain IDs will cause failed transactions.
@@ -581,11 +566,13 @@ For bridge operations, pre-checks run SILENTLY — the user only sees the result
 
 ### Silent Pre-checks (auto, no user interaction)
 ```bash
-# 1. Source environment
-set -a && source $ENV_FILE && set +a
+# 1. Key Prelude (see Phase 0) — loads PRIVATE_KEY from ~/.kitsune/config.toml / KITSUNE_PRIVATE_KEY
+CFG="$HOME/.kitsune/config.toml"
+PROFILE="${KITSUNE_PROFILE:-$(sed -n 's/^default_profile[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$CFG" 2>/dev/null | head -1)}"; PROFILE="${PROFILE:-mainnet}"
+PRIVATE_KEY="${KITSUNE_PRIVATE_KEY:-$(awk -v s="[profiles.$PROFILE]" '$0==s{f=1;next}/^\[/{f=0}f&&$1~/^private_key/{sub(/^[^"]*"/,"");sub(/".*$/,"");print;exit}' "$CFG" 2>/dev/null)}"
 
-# 2. Verify private key (output "set"/"not set" only)
-[ -n "$PRIVATE_KEY" ] && echo "set" || echo "not set"
+# 2. Verify private key (output "loaded"/"not found" only)
+[ -n "$PRIVATE_KEY" ] && echo "loaded" || echo "not found"
 
 # 3. Derive address
 ADDRESS=$(cast wallet address --private-key $PRIVATE_KEY)
