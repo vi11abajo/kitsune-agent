@@ -1,0 +1,76 @@
+{
+  "networks": [
+    {
+      "name": "pharos",
+      "rpcUrl": "https://rpc.pharos.xyz",
+      "chainId": 1672,
+      "explorerUrl": "https://www.pharosscan.xyz/",
+      "explorerApiUrl": "https://api.socialscan.io/pharos-mainnet",
+      "nativeToken": "PROS",
+      "cctpDomain": 31
+    },
+    {
+      "name": "ethereum",
+      "rpcUrl": "https://ethereum.publicnode.com",
+      "chainId": 1,
+      "explorerUrl": "https://etherscan.io/",
+      "nativeToken": "ETH",
+      "cctpDomain": 0
+    },
+    {
+      "name": "base",
+      "rpcUrl": "https://mainnet.base.org",
+      "chainId": 8453,
+      "explorerUrl": "https://basescan.org/",
+      "nativeToken": "ETH",
+      "cctpDomain": 6
+    },
+    {
+      "name": "arbitrum",
+      "rpcUrl": "https://arb1.arbitrum.io/rpc",
+      "chainId": 42161,
+      "explorerUrl": "https://arbiscan.io/",
+      "nativeToken": "ETH",
+      "cctpDomain": 3
+    },
+    {
+      "name": "optimism",
+      "rpcUrl": "https://mainnet.optimism.io",
+      "chainId": 10,
+      "explorerUrl": "https://optimistic.etherscan.io/",
+      "nativeToken": "ETH",
+      "cctpDomain": 2
+    },
+    {
+      "name": "polygon",
+      "rpcUrl": "https://polygon-rpc.com",
+      "chainId": 137,
+      "explorerUrl": "https://polygonscan.com/",
+      "nativeToken": "MATIC",
+      "cctpDomain": 7
+    },
+    {
+      "name": "avalanche",
+      "rpcUrl": "https://api.avax.network/ext/bc/C/rpc",
+      "chainId": 43114,
+      "explorerUrl": "https://snowtrace.io/",
+      "nativeToken": "AVAX",
+      "cctpDomain": 1
+    },
+    {
+      "name": "bsc",
+      "rpcUrl": "https://bsc-dataseed.binance.org",
+      "chainId": 56,
+      "explorerUrl": "https://bscscan.com/",
+      "nativeToken": "BNB",
+      "cctpDomain": 17
+    }
+  ],
+  "defaultNetwork": "pharos",
+  "bridgeContracts": {
+    "tokenMessengerV2": "0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d",
+    "messageTransmitterV2": "0x81D40F21F12A8F0E3252Bccb954D722d4c464B64",
+    "interportActionExecutor": "0x7b2E3FC7510D1A51b3bef735F985446589219354",
+    "interportCCIPV2": "0x0772C76c3e4b081E85747f248ed76CC3813d46C4"
+  }
+}

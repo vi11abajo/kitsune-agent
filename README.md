@@ -16,9 +16,9 @@ Let your AI agent read markets, manage vaults, and run DCA / grid strategies on-
 ---
 
 > ### 🏆 Built for the Pharos *Skill-to-Agent Dual Cascade* Hackathon
-> A **production toolkit live on Pharos mainnet** — 9 **reusable, composable** Agent Skills plus an MCP
+> A **production toolkit live on Pharos mainnet** — 10 **reusable, composable** Agent Skills plus an MCP
 > server, CLI, and shared core. Each Skill is a self-contained building block; chain them together and an
-> AI agent goes from reading a market to running an on-chain DCA strategy, all in natural language.
+> AI agent goes from bridging funds onto Pharos to running an on-chain DCA strategy, all in natural language.
 
 ---
 
@@ -61,14 +61,16 @@ It ships as **three standalone pieces around one shared core**, mirroring the OK
 | **`@kitsune-ai/agent-cli`** (`kitsune`) | A terminal CLI. Works with shell pipes, cron, and scripts — no AI client needed. Also the runtime behind the Skills. |
 | **`@kitsune-ai/agent-core`** | The shared library: config, REST client (SIWE/JWT), viem chain layer, and the single tool catalog used by both the MCP server and the CLI. |
 
-Plus **9 plug-and-play Skills** for clients that support the Agent Skills protocol.
+Plus **10 plug-and-play Skills** for clients that support the Agent Skills protocol — including
+`pharos-bridge`, a cross-chain on-ramp (Circle CCTP V2 / Chainlink CCIP) that bridges USDC and PROS
+between Pharos and 7 EVM chains so an agent can fund Kitsune vaults out of the box.
 
 ### Architecture
 
 ```mermaid
 graph LR
   A["AI agent<br/>(Claude · Cursor · OpenAI Agents SDK)"]
-  A --> S["Agent Skills<br/>(9 SKILL.md)"]
+  A --> S["Agent Skills<br/>(10 SKILL.md)"]
   A --> M["kitsune-mcp<br/>MCP server"]
   A --> C["kitsune CLI"]
   S --> C
@@ -93,6 +95,7 @@ AI agent  →  Skills / MCP server / CLI  →  @kitsune-ai/agent-core  →  Kits
 | Feature | Details |
 |---|---|
 | **47 tools across 9 modules** | market · vault · strategy · portfolio · marketplace · executor · referral · fees · notifications |
+| **Cross-chain on-ramp** | `pharos-bridge` skill — native USDC (Circle CCTP V2) and PROS (Chainlink CCIP) between Pharos and Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, BSC |
 | **Market data** | prices, OHLCV candles, technical indicators (RSI/MACD/EMA/Bollinger), DODO pools, backtests |
 | **Vaults** | list, balances, allocations, create, withdraw |
 | **Strategies** | DCA / grid lifecycle — create, update, pause, resume, withdraw, plus trades, metrics & positions |
@@ -242,12 +245,12 @@ agent = Agent(
 
 ### Phase 2 ready — composability
 
-The 9 Skills are deliberately small, single-purpose blocks — that's what makes them **composable** into a
+The 10 Skills are deliberately small, single-purpose blocks — that's what makes them **composable** into a
 full autonomous on-chain trading **Agent** (the hackathon's Phase 2 / Agent Arena). A single agent can chain
-them end to end: read indicators with `kitsune-market` → open a vault with `kitsune-vault` → launch a DCA
-strategy with `kitsune-strategy` → monitor PnL with `kitsune-portfolio` → rebalance by copying a top strategy
-from `kitsune-marketplace`. No new integration code — the Agent emerges from **reusing and composing existing
-Skills**.
+them end to end: bridge USDC onto Pharos with `pharos-bridge` → read indicators with `kitsune-market` → open
+a vault with `kitsune-vault` → launch a DCA strategy with `kitsune-strategy` → monitor PnL with
+`kitsune-portfolio` → rebalance by copying a top strategy from `kitsune-marketplace`. No new integration
+code — the Agent emerges from **reusing and composing existing Skills**.
 
 ---
 
@@ -371,11 +374,13 @@ Global flags: `--json` · `--profile <name>` · `--read-only`.
 
 ## Skills
 
-Plug-and-play modules for AI clients that support the Agent Skills protocol. Each is a single `SKILL.md`
-that shells out to the `kitsune` CLI.
+Plug-and-play modules for AI clients that support the Agent Skills protocol. The nine `kitsune-*` Skills
+are a single `SKILL.md` each that shells out to the `kitsune` CLI; `pharos-bridge` is self-contained and
+talks to the chains directly via Foundry's `cast`.
 
 | Skill | Covers | Credentials |
 |---|---|---|
+| `pharos-bridge` | cross-chain on-ramp: bridge USDC (Circle CCTP V2, 8 chains) and PROS (Chainlink CCIP) to/from Pharos; multi-chain balance checks; on-chain toolkit (deploy, airdrops, scripts) | key in local `.env` (needs `cast` + `jq`) |
 | `kitsune-market` | prices, candles, indicators, DODO swap routes, backtests | none for reads |
 | `kitsune-vault` | list/balances/allocations, create, withdraw | sign-in / key |
 | `kitsune-strategy` | full DCA/grid lifecycle + off-chain config + trades & metrics | sign-in / key |
@@ -459,7 +464,7 @@ Workspace layout:
 packages/core   @kitsune-ai/agent-core   shared: config, API client, viem chain, tool catalog
 packages/mcp    @kitsune-ai/agent-mcp     stdio MCP server   (bin: kitsune-mcp)
 packages/cli    @kitsune-ai/agent-cli     terminal CLI       (bin: kitsune)
-agent-skills/   9 SKILL.md + shared preflight
+agent-skills/   10 SKILL.md (9 CLI-backed + pharos-bridge) + shared preflight
 ```
 
 Tech: TypeScript (ESM), pnpm workspaces, tsup, vitest, viem, siwe, `@modelcontextprotocol/sdk`. Node ≥18.
