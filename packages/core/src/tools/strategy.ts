@@ -80,6 +80,26 @@ export function registerStrategyTools(): ToolSpec[] {
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) => ctx.client.authedGet(`/strategies/${addr(a, 'vault')}/${seg(a, 'strategyId')}/metrics`),
     },
+    {
+      name: 'strategy_get_grid_orders', title: 'Get Grid Orders', module: 'strategy', isWrite: false, auth: 'jwt',
+      description:
+        'Live grid order book for a grid strategy: resting BUY/SELL orders per zone with price levels, ' +
+        'current price and distance-to-fill %. Non-grid strategies return { isGrid: false, buyOrders: [], sellOrders: [] }.',
+      inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}/grid-orders`),
+    },
+    {
+      name: 'strategy_get_by_uuid', title: 'Get Strategy By UUID', module: 'strategy', isWrite: false, auth: 'jwt',
+      description: 'Look up a strategy by its UUID — e.g. right after marketplace_copy, before the on-chain id is known.',
+      inputSchema: { type: 'object', properties: { vault: { type: 'string' }, uuid: { type: 'string' } }, required: ['vault', 'uuid'] },
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'vault')}/strategies/by-uuid/${seg(a, 'uuid')}`),
+    },
+    {
+      name: 'strategy_list_trash', title: 'List Hidden Strategies', module: 'strategy', isWrite: false, auth: 'jwt',
+      description: 'List hidden (trashed) strategies in a vault — the ones strategy_hide moved out of the main list.',
+      inputSchema: { type: 'object', properties: { vault: { type: 'string' } }, required: ['vault'] },
+      handler: async (a, ctx) => ctx.client.authedGet(`/vaults/${addr(a, 'vault')}/strategies/trash`),
+    },
 
     // ---- on-chain writes (signer) ----
     {
@@ -179,6 +199,9 @@ export function registerStrategyTools(): ToolSpec[] {
           dcaOrderAmount: { type: 'string' },
           priceStepPercent: { type: 'number' }, priceStepMultiplier: { type: 'number' },
           rsiThreshold: { type: 'number' }, rsiPeriod: { type: 'number' }, rsiTimeframe: { type: 'string' },
+          macdTimeframe: { type: 'string' }, macdFastPeriod: { type: 'number' }, macdSlowPeriod: { type: 'number' }, macdSignalPeriod: { type: 'number' },
+          emaFastPeriod: { type: 'number' }, emaSlowPeriod: { type: 'number' }, emaTimeframe: { type: 'string' },
+          bbTimeframe: { type: 'string' }, bbPeriod: { type: 'number' }, bbStdDev: { type: 'number' },
           trailingTpEnabled: { type: 'boolean' }, trailingTpCallbackPercent: { type: 'number' },
           trailingSlEnabled: { type: 'boolean' }, trailingSlCallbackPercent: { type: 'number' },
           entryIndicators: { type: 'object', description: '{ logic: "AND"|"OR", indicators: [{ type, params }] }' },

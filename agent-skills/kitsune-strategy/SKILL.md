@@ -4,11 +4,11 @@ description: "Use this skill to manage Kitsune (Pharos) trading strategies end-t
 license: MIT
 metadata:
   author: kitsune
-  version: "0.3.0"
+  version: "0.3.1"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.3", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.4", bins: ["kitsune"] }
 ---
 
 # Kitsune Strategies
@@ -52,23 +52,26 @@ Load only what the task needs:
 | 3 | `kitsune call strategy_get_position --vault <addr> --strategyId <id>` | Open position state |
 | 4 | `kitsune call strategy_get_trades --vault <addr> --strategyId <id> --page 1 --pageSize 50` | Trade history |
 | 5 | `kitsune call strategy_get_metrics --vault <addr> --strategyId <id>` | PnL / win-rate / Sharpe |
+| 6 | `kitsune call strategy_get_grid_orders --vault <addr> --strategyId <id>` | Live grid order book: resting BUY/SELL per zone + distance-to-fill % |
+| 7 | `kitsune call strategy_get_by_uuid --vault <addr> --uuid <uuid>` | Look up by UUID (e.g. right after `marketplace_copy`) |
+| 8 | `kitsune call strategy_list_trash --vault <addr>` | List hidden strategies |
 
 ### On-chain writes (private_key required) — [CAUTION]
 | # | Command | Description |
 |---|---------|-------------|
-| 6 | `kitsune call strategy_create --args '<json>'` | Create (see Create Workflow) |
-| 7 | `kitsune call strategy_update --args '<json>'` | Update — ALL on-chain fields required, not a patch |
-| 8 | `kitsune call strategy_pause --vault <addr> --strategyId <id>` | Pause (executor stops trading it) |
-| 9 | `kitsune call strategy_resume --vault <addr> --strategyId <id>` | Resume |
-| 10 | `kitsune call strategy_withdraw --vault <addr> --strategyId <id>` | Withdraw position |
+| 9 | `kitsune call strategy_create --args '<json>'` | Create (see Create Workflow) |
+| 10 | `kitsune call strategy_update --args '<json>'` | Update — ALL on-chain fields required, not a patch |
+| 11 | `kitsune call strategy_pause --vault <addr> --strategyId <id>` | Pause (executor stops trading it) |
+| 12 | `kitsune call strategy_resume --vault <addr> --strategyId <id>` | Resume |
+| 13 | `kitsune call strategy_withdraw --vault <addr> --strategyId <id>` | Withdraw position |
 
 ### Off-chain edits (sign-in required)
 | # | Command | Description |
 |---|---------|-------------|
-| 11 | `kitsune call strategy_set_config --args '<json>'` | Set executor config (type/grid/entry/trailing) — partial, only sent fields change |
-| 12 | `kitsune call strategy_set_metadata --args '{"vault":"0x..","strategyId":"3","name":"My grid"}'` | Display name |
-| 13 | `kitsune call strategy_restart_cycle --vault <addr> --strategyId <id>` | Reset DCA/grid cycle |
-| 14 | `kitsune call strategy_hide --vault <addr> --strategyId <id>` / `strategy_restore` | Hide / restore |
+| 14 | `kitsune call strategy_set_config --args '<json>'` | Set executor config (type/grid/entry/trailing) — partial, only sent fields change |
+| 15 | `kitsune call strategy_set_metadata --args '{"vault":"0x..","strategyId":"3","name":"My grid"}'` | Display name |
+| 16 | `kitsune call strategy_restart_cycle --vault <addr> --strategyId <id>` | Reset DCA/grid cycle |
+| 17 | `kitsune call strategy_hide --vault <addr> --strategyId <id>` / `strategy_restore` | Hide / restore |
 
 Add `--json` for raw output.
 
@@ -182,6 +185,9 @@ units, tx hash, `[profile: ...]`.
 ## Monitoring & Rebalance
 
 - Health check: `strategy_get_metrics` (PnL, win-rate, Sharpe) + `strategy_get_position`.
+- Grid health: `strategy_get_grid_orders` shows the live order book (resting BUY/SELL per zone,
+  distance-to-fill %). Use it to answer "where are my grid orders?" and to spot a price drifting
+  out of range before proposing a rebalance.
 - Rebalance triggers (suggest, don't auto-execute): price pinned in the top/bottom 10% of the grid
   range → propose new bounds via `strategy_set_config` + `strategy_restart_cycle`; trend flip vs
   the strategy's bias → propose pause or re-parameterize.

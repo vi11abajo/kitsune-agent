@@ -153,6 +153,41 @@ describe('tool catalog', () => {
     await find('notifications_set_preferences').handler({ notifyBuy: false }, ctxWith({ client }));
     expect(client.authedSend).toHaveBeenCalledWith('PUT', '/notifications/preferences', { notifyBuy: false });
   });
+
+  it('agra_get_nav_history is public and defaults to the pALPHA market', async () => {
+    const client = { get: vi.fn().mockResolvedValue([]) };
+    await find('agra_get_nav_history').handler({ timeframe: 'day' }, ctxWith({ client }));
+    expect(client.get).toHaveBeenCalledWith(
+      '/agra/nav-history/0xE47E9bA4EA2320A6ed87246d02Fd5C38485Ed7d1',
+      { timeframe: 'day', range: undefined },
+    );
+    expect(find('agra_get_nav_history').auth).toBe('none');
+  });
+
+  it('agra_get_nav_history rejects a malformed marketId', async () => {
+    const client = { get: vi.fn() };
+    await expect(find('agra_get_nav_history').handler({ marketId: '../x' }, ctxWith({ client })))
+      .rejects.toThrow('Invalid address argument: marketId');
+    expect(client.get).not.toHaveBeenCalled();
+  });
+
+  it('strategy_get_grid_orders hits the grid-orders path', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue({ isGrid: true }) };
+    await find('strategy_get_grid_orders').handler({ vault: VAULT, strategyId: '1' }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith(`/vaults/${VAULT}/strategies/1/grid-orders`);
+  });
+
+  it('strategy_get_by_uuid encodes the uuid path segment', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue({}) };
+    await find('strategy_get_by_uuid').handler({ vault: VAULT, uuid: 'abc/../def' }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith(`/vaults/${VAULT}/strategies/by-uuid/abc%2F..%2Fdef`);
+  });
+
+  it('strategy_list_trash lists hidden strategies', async () => {
+    const client = { authedGet: vi.fn().mockResolvedValue([]) };
+    await find('strategy_list_trash').handler({ vault: VAULT }, ctxWith({ client }));
+    expect(client.authedGet).toHaveBeenCalledWith(`/vaults/${VAULT}/strategies/trash`);
+  });
 });
 
 describe('path argument helpers', () => {

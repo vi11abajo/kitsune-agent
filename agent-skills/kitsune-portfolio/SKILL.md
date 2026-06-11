@@ -4,11 +4,11 @@ description: "Use this skill for Kitsune (Pharos) portfolio and ranking views: a
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.2"
+  version: "0.2.4"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.3", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.4", bins: ["kitsune"] }
 ---
 
 # Kitsune Portfolio

@@ -8,6 +8,7 @@ import { registerExecutorTools } from './executor.js';
 import { registerReferralTools } from './referral.js';
 import { registerFeeTools } from './fees.js';
 import { registerNotificationTools } from './notifications.js';
+import { registerAgraTools } from './agra.js';
 
 export function allToolSpecs(): ToolSpec[] {
   return [
@@ -20,6 +21,7 @@ export function allToolSpecs(): ToolSpec[] {
     ...registerReferralTools(),
     ...registerFeeTools(),
     ...registerNotificationTools(),
+    ...registerAgraTools(),
   ];
 }
 

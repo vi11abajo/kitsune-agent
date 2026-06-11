@@ -4,7 +4,7 @@ description: "Use this skill when the user wants to move funds between Pharos an
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.2"
+  version: "0.2.4"
   agent:
     requires: { bins: ["cast", "jq"] }
 ---

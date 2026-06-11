@@ -94,11 +94,11 @@ AI agent  →  Skills / MCP server / CLI  →  @kitsune-ai/agent-core  →  Kits
 
 | Feature | Details |
 |---|---|
-| **47 tools across 9 modules** | market · vault · strategy · portfolio · marketplace · executor · referral · fees · notifications |
+| **51 tools across 10 modules** | market · vault · strategy · portfolio · marketplace · executor · referral · fees · notifications · agra |
 | **Cross-chain bridging** | native USDC (Circle CCTP V2) and PROS (Chainlink CCIP) between Pharos and Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, BSC — same wallet as everything else |
 | **Market data** | prices, OHLCV candles, technical indicators (RSI/MACD/EMA/Bollinger), DODO pools, backtests |
 | **Vaults** | list, balances, allocations, create, withdraw |
-| **Strategies** | guided DCA / grid / recurring creation — parameter recommendation from live market state, three risk tiers, backtest before gas — plus full lifecycle: update, pause, resume, withdraw, trades, metrics & positions |
+| **Strategies** | guided DCA / grid / recurring creation — parameter recommendation from live market state, three risk tiers, backtest before gas — plus full lifecycle: update, pause, resume, withdraw, trades, metrics, positions & live grid order book |
 | **Portfolio** | aggregated PnL, vault activity, leaderboard |
 | **Marketplace** | browse, share, copy, and delist strategies |
 | **Self-custody** | keys stay local; SIWE + on-chain txs signed on your machine |
@@ -112,13 +112,14 @@ AI agent  →  Skills / MCP server / CLI  →  @kitsune-ai/agent-core  →  Kits
 |---|---|---|---|
 | `market` | 6 | `kitsune-market` | public (backtest & DODO route need sign-in) |
 | `vault` | 5 | `kitsune-vault` | sign-in / signer |
-| `strategy` | 15 | `kitsune-strategy` | sign-in / signer |
+| `strategy` | 18 | `kitsune-strategy` | sign-in / signer |
 | `portfolio` | 3 | `kitsune-portfolio` | sign-in (leaderboard public) |
 | `marketplace` | 5 | `kitsune-marketplace` | public / sign-in |
 | `executor` | 3 | `kitsune-executor` | sign-in |
 | `referral` | 4 | `kitsune-referral` | public (resolve) / sign-in |
 | `fees` | 2 | `kitsune-fees` | sign-in |
 | `notifications` | 4 | `kitsune-notifications` | sign-in |
+| `agra` | 1 | `kitsune-agra` | public |
 | `bridge` | skill-only | `kitsune-bridge` | local key (signs with `cast`) |
 
 > **Auth legend** — `public`: no credentials · `sign-in` (jwt): a local SIWE sign-in (needs a private key) ·
@@ -246,7 +247,7 @@ agent = Agent(
 
 ### Phase 2 ready — composability
 
-The 10 Skills are deliberately small, single-purpose blocks — that's what makes them **composable** into a
+The 11 Skills are deliberately small, single-purpose blocks — that's what makes them **composable** into a
 full autonomous on-chain trading **Agent** (the hackathon's Phase 2 / Agent Arena). A single agent can chain
 them end to end: bridge USDC onto Pharos with `kitsune-bridge` → read indicators with `kitsune-market` → open
 a vault with `kitsune-vault` → launch a DCA strategy with `kitsune-strategy` → monitor PnL with
@@ -300,6 +301,8 @@ is hidden — the agent never even sees what it can't do.
 |---|---|---|
 | `strategy_list` / `strategy_get` / `strategy_get_position` | sign-in | List / get / open position |
 | `strategy_get_trades` / `strategy_get_metrics` | sign-in | Trade history · PnL / win-rate / Sharpe |
+| `strategy_get_grid_orders` | sign-in | Live grid order book (resting BUY/SELL per zone, distance-to-fill %) |
+| `strategy_get_by_uuid` / `strategy_list_trash` | sign-in | Look up by UUID · list hidden strategies |
 | `strategy_create` / `strategy_update` | signer ⚠️ | Create / update a strategy on-chain |
 | `strategy_pause` / `strategy_resume` | signer ⚠️ | Pause / resume execution |
 | `strategy_withdraw` | signer ⚠️ | Withdraw a strategy position |
@@ -345,6 +348,11 @@ is hidden — the agent never even sees what it can't do.
 | `notifications_get_preferences` / `notifications_set_preferences` | Get / upsert prefs (global or per-strategy) |
 | `notifications_unlink_telegram` | ⚠️ Unlink Telegram |
 
+**`agra`** — public
+| Tool | Description |
+|---|---|
+| `agra_get_nav_history` | pALPHA bond NAV history (hour/day; 1w/1m/3m) |
+
 ---
 
 ## `kitsune` — CLI
@@ -362,7 +370,7 @@ kitsune call vault_list --owner 0xYourAddress
 kitsune call strategy_create --args '{"vault":"0x..","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":1000,"maxDcaCount":5,"maxTradesPerDay":3,"active":true,"firstBuyAmount":"1000000","maxPositionSize":"15000000","dcaMultiplier":"15000"}'
 
 # Discoverability
-kitsune tools                       # list all 47 tools
+kitsune tools                       # list all 51 tools
 kitsune setup --client cursor       # print MCP registration
 
 # Pipes & scripting
@@ -391,6 +399,7 @@ CLI; `kitsune-bridge` drives the chains directly via Foundry's `cast`.
 | `kitsune-referral` | resolve / get code / stats / link | public (resolve) / sign-in |
 | `kitsune-fees` | creator + referrer earnings dashboard & history | sign-in |
 | `kitsune-notifications` | Telegram status, preferences, unlink | sign-in |
+| `kitsune-agra` | pALPHA bond NAV history (Agra market on Kitsune USDC) | none |
 
 Skills live in [`agent-skills/`](./agent-skills).
 
