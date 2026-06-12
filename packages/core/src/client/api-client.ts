@@ -76,7 +76,7 @@ export class KitsuneApiClient {
       statement: 'Sign in to Kitsune',
       uri: `https://${domain}`,
       version: '1',
-      chainId: this.opts.chainId ?? 688689,
+      chainId: this.opts.chainId ?? 1672,
       nonce,
     });
     const message = siwe.prepareMessage();

@@ -4,11 +4,11 @@ description: "Use this skill for Kitsune (Pharos) fee earnings: view your creato
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.12"
+  version: "0.2.13"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.12", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.13", bins: ["kitsune"] }
 ---
 
 # Kitsune Fees

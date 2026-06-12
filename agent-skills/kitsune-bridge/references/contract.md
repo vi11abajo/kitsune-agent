@@ -310,7 +310,7 @@ forge verify-contract <deployed_address> src/erc20/StandardERC20.sol:StandardERC
 
 ```bash
 forge verify-contract 0x1234...abcd src/erc20/StandardERC20.sol:StandardERC20 \
-  --chain-id 688689 \
+  --chain-id 1672 \
   --verifier-url https://api.socialscan.io/pharos-mainnet/v1/explorer/command_api/contract \
   --verifier blockscout \
   --constructor-args $(cast abi-encode "constructor(string,string,uint8,uint256)" "Akio Token" "ATOKEN" 6 100)

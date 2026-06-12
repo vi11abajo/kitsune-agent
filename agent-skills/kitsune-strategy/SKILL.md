@@ -4,11 +4,11 @@ description: "Use this skill to manage Kitsune (Pharos) trading strategies end-t
 license: MIT
 metadata:
   author: kitsune
-  version: "0.3.9"
+  version: "0.3.10"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.12", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.13", bins: ["kitsune"] }
 ---
 
 # Kitsune Strategies
