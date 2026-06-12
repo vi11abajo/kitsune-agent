@@ -28,22 +28,26 @@ export function registerMarketplaceTools(): ToolSpec[] {
     },
     {
       name: 'marketplace_share', title: 'Share To Marketplace', module: 'marketplace', isWrite: true, auth: 'jwt',
-      description: 'Publish a strategy to the marketplace. name and tradingPair are required. strategyType is dca|grid|recurring (default dca). sourceStrategyId (if given) is a number.',
+      description: 'Publish a strategy to the marketplace. name and tradingPair are required; authorAddress defaults to your wallet. strategyType is dca|grid|recurring (default dca). sourceStrategyId (if given) is a number. config, if passed, is a flat map of string/number/boolean values.',
       inputSchema: {
         type: 'object',
         properties: {
           name: { type: 'string' }, tradingPair: { type: 'string', description: 'e.g. WPROS/USDC' },
           description: { type: 'string' },
           strategyType: { type: 'string', description: 'dca | grid | recurring (default dca)' },
-          config: { type: 'object', description: 'optional strategy config snapshot' },
+          config: { type: 'object', description: 'optional flat config snapshot (string/number/boolean values)' },
           tags: { type: 'array' },
           backtestPnl: { type: 'number' }, backtestWinRate: { type: 'number' },
           sourceVaultAddress: { type: 'string' }, sourceStrategyId: { type: 'number' },
+          authorAddress: { type: 'string', description: 'author wallet (defaults to your signer address)' },
         },
         required: ['name', 'tradingPair'],
       },
-      handler: async (a, ctx) =>
-        ctx.client.authedSend('POST', '/marketplace', {
+      handler: async (a, ctx) => {
+        const authorAddress = optStr(a, 'authorAddress') ?? ctx.chain.address;
+        if (!authorAddress) throw new Error('marketplace_share requires a signer wallet — add a private_key to your profile.');
+        return ctx.client.authedSend('POST', '/marketplace', {
+          authorAddress,
           name: str(a, 'name'),
           tradingPair: str(a, 'tradingPair'),
           description: optStr(a, 'description'),
@@ -54,7 +58,8 @@ export function registerMarketplaceTools(): ToolSpec[] {
           backtestWinRate: optNum(a, 'backtestWinRate'),
           sourceVaultAddress: optStr(a, 'sourceVaultAddress'),
           sourceStrategyId: optNum(a, 'sourceStrategyId'),
-        }),
+        });
+      },
     },
     {
       name: 'marketplace_copy', title: 'Copy Marketplace Strategy', module: 'marketplace', isWrite: true, auth: 'jwt',

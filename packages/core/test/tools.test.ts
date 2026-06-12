@@ -124,6 +124,22 @@ describe('tool catalog', () => {
     expect(chain.createStrategy).not.toHaveBeenCalled();
   });
 
+  it('marketplace_share auto-fills authorAddress from the signer wallet', async () => {
+    const client = { authedSend: vi.fn().mockResolvedValue({ publicId: 1 }) };
+    const chain = { address: '0xMEWALLET' };
+    await find('marketplace_share').handler({ name: 'My grid', tradingPair: 'WPROS/USDC', sourceStrategyId: 0 }, ctxWith({ client, chain }));
+    expect(client.authedSend).toHaveBeenCalledWith('POST', '/marketplace', expect.objectContaining({
+      authorAddress: '0xMEWALLET', name: 'My grid', tradingPair: 'WPROS/USDC', sourceStrategyId: 0,
+    }));
+  });
+
+  it('marketplace_share fails clearly when there is no signer wallet', async () => {
+    const client = { authedSend: vi.fn() };
+    await expect(find('marketplace_share').handler({ name: 'x', tradingPair: 'WPROS/USDC' }, ctxWith({ client, chain: {} })))
+      .rejects.toThrow(/signer wallet/);
+    expect(client.authedSend).not.toHaveBeenCalled();
+  });
+
   it('marketplace_copy uses authedSend with the copy path (no body)', async () => {
     const client = { authedSend: vi.fn().mockResolvedValue({}) };
     await find('marketplace_copy').handler({ id: '7' }, ctxWith({ client }));

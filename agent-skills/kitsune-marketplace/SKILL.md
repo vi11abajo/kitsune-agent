@@ -4,11 +4,11 @@ description: "Use this skill for the Kitsune (Pharos) strategy marketplace: brow
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.8"
+  version: "0.2.9"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.8", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.9", bins: ["kitsune"] }
 ---
 
 # Kitsune Marketplace
