@@ -4,16 +4,16 @@ description: "Use this skill for Agra bond-market data on Kitsune (Pharos): pALP
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.5"
+  version: "0.2.6"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.5", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.6", bins: ["kitsune"] }
 ---
 
 # Kitsune Agra (pALPHA)
 
-See [preflight](references/preflight.md) first. All commands here are public — no credentials needed.
+See [preflight](references/preflight.md) first — including the CRITICAL security rule: never output secrets (private keys, API keys, JWTs) to chat. All commands here are public — no credentials needed.
 
 pALPHA is an Agra bond market settled in Kitsune USDC on Pharos mainnet. NAV history comes from the
 Agra API via the Kitsune backend (cached ~60s).

@@ -4,16 +4,16 @@ description: "Use this skill to manage Kitsune (Pharos) trading strategies end-t
 license: MIT
 metadata:
   author: kitsune
-  version: "0.3.2"
+  version: "0.3.3"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.5", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.6", bins: ["kitsune"] }
 ---
 
 # Kitsune Strategies
 
-See [preflight](references/preflight.md) first. On-chain writes need a `private_key` and send
+See [preflight](references/preflight.md) first — including the CRITICAL security rule: never output secrets (private keys, API keys, JWTs) to chat. On-chain writes need a `private_key` and send
 transactions on Pharos (mainnet by default; use `--profile testnet` for risk-free Atlantic).
 Append `[profile: mainnet]` or `[profile: testnet]` to every command report so the user always
 knows which network was touched.

@@ -4,16 +4,16 @@ description: "Use this skill when the user asks for market data on Kitsune/Pharo
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.5"
+  version: "0.2.6"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.5", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.6", bins: ["kitsune"] }
 ---
 
 # Kitsune Market Data
 
-Read-only. See [preflight](references/preflight.md) first.
+Read-only. See [preflight](references/preflight.md) first — including the CRITICAL security rule: never output secrets (private keys, API keys, JWTs) to chat.
 
 | # | Command | Description |
 |---|---------|-------------|

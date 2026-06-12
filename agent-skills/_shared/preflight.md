@@ -38,3 +38,19 @@ kitsune market price BTC USDT
 the agent MUST show the user the exact command it is about to run — including all amounts and
 addresses — and get the user's explicit confirmation. Never send an on-chain transaction or move
 funds without that confirmation.
+
+## Security rule — secrets NEVER appear in chat (CRITICAL)
+
+`~/.kitsune/config.toml` holds a private key. When reading, writing, or debugging it (or any
+config/env file), the agent MUST NOT print, echo, quote, or summarize secret values into the
+conversation or logs: `private_key`, `KITSUNE_PRIVATE_KEY`, API keys, JWT tokens, seed phrases.
+
+- Never `cat`/`type` a file that contains a secret. Extract only non-secret fields
+  (e.g. `grep -v private_key ~/.kitsune/config.toml`).
+- Never inline a literal key into a command line that is shown in chat — always reference it
+  as an environment variable (`"$KITSUNE_PRIVATE_KEY"`, `"$PRIVATE_KEY"`).
+- If a command's output accidentally contains a secret, redact it in the reply
+  (`private_key = [REDACTED]`) — never repeat it.
+- Public values are fine to show: wallet addresses, vault addresses, tx hashes, balances.
+- If the user pastes a private key into the chat themselves, warn them it is now exposed in the
+  conversation history and recommend moving funds to a fresh key.

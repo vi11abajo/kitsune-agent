@@ -4,16 +4,16 @@ description: "Use this skill for Kitsune (Pharos) vault operations: list a walle
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.5"
+  version: "0.2.6"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.5", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.6", bins: ["kitsune"] }
 ---
 
 # Kitsune Vaults
 
-See [preflight](references/preflight.md) first. Reads need sign-in; writes need a `private_key` and send on-chain transactions on Pharos (mainnet by default; use `--profile testnet` for Atlantic).
+See [preflight](references/preflight.md) first — including the CRITICAL security rule: never output secrets (private keys, API keys, JWTs) to chat. Reads need sign-in; writes need a `private_key` and send on-chain transactions on Pharos (mainnet by default; use `--profile testnet` for Atlantic).
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|

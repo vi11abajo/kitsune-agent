@@ -4,7 +4,7 @@ description: "Use this skill when the user wants to move funds between Pharos an
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.5"
+  version: "0.2.6"
   agent:
     requires: { bins: ["cast", "jq"] }
 ---
@@ -65,6 +65,14 @@ The key is resolved in this order:
 
 1. `KITSUNE_PRIVATE_KEY` environment variable (if set)
 2. `private_key` of the **default profile** in `~/.kitsune/config.toml` (the kit's standard config)
+
+> 🔒 **SECURITY — the key value must NEVER appear in chat (CRITICAL).** The prelude loads the key
+> into a shell variable silently. Beyond the forbidden commands below: never inline the literal key
+> into any command line shown to the user — always pass it as `--private-key "$PRIVATE_KEY"` so the
+> shell expands it internally; if ANY tool output accidentally contains a key (or an API key, JWT,
+> seed phrase), redact it in your reply (`[REDACTED]`) — never repeat it. Public wallet addresses,
+> tx hashes and balances are fine to show. If the user pastes a private key into the chat, warn them
+> it is exposed in the conversation history and recommend moving funds to a fresh key.
 
 The **Key Prelude** below loads it. Because shell state does NOT persist between Bash tool calls,
 **prepend this prelude to EVERY command that signs or sends a transaction**:

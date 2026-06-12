@@ -4,16 +4,16 @@ description: "Use this skill to inspect Kitsune (Pharos) executors — the keepe
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.5"
+  version: "0.2.6"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.5", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.6", bins: ["kitsune"] }
 ---
 
 # Kitsune Executors
 
-See [preflight](references/preflight.md) first. All reads need sign-in.
+See [preflight](references/preflight.md) first — including the CRITICAL security rule: never output secrets (private keys, API keys, JWTs) to chat. All reads need sign-in.
 
 | # | Command | Auth | Description |
 |---|---------|------|-------------|

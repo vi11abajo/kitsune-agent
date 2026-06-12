@@ -4,7 +4,7 @@ This file contains detailed instructions for all transaction operations on the P
 
 > **Network Configuration**: The `<rpc>` parameter in all commands is read from the corresponding network's `rpcUrl` field in `assets/networks.json`. Defaults to Pharos mainnet.
 >
-> **Private Key Configuration**: All write operations must explicitly pass the private key via the `--private-key` parameter. Load `$PRIVATE_KEY` with the Key Prelude from SKILL.md Phase 0 (reads `~/.kitsune/config.toml` / `KITSUNE_PRIVATE_KEY`) and pass `--private-key $PRIVATE_KEY`. `cast` does not automatically read environment variables; they must be explicitly referenced in the command.
+> **Private Key Configuration**: All write operations must explicitly pass the private key via the `--private-key` parameter. Load `$PRIVATE_KEY` with the Key Prelude from SKILL.md Phase 0 (reads `~/.kitsune/config.toml` / `KITSUNE_PRIVATE_KEY`) and pass `--private-key "$PRIVATE_KEY"`. NEVER inline the literal key into a command or print its value — the key must never appear in chat output; redact it if any output contains it. `cast` does not automatically read environment variables; they must be explicitly referenced in the command.
 
 ---
 
@@ -24,7 +24,7 @@ cast send <to> --value <amount>ether --private-key <key> --rpc-url <rpc>
 |-----------|------|----------|-------------|
 | `<to>` | string | Yes | Recipient address, format: `0x` + 40 hex characters |
 | `<amount>` | number | Yes | Transfer amount in ether (e.g., `0.1ether`, `1ether`) |
-| `<key>` | string | Yes | Sender private key, or use environment variable `$PRIVATE_KEY` |
+| `<key>` | string | Yes | Always `"$PRIVATE_KEY"` from the Key Prelude — never paste a literal key |
 | `<rpc>` | string | Yes | RPC endpoint URL, read from `assets/networks.json` |
 
 **Output Parsing**
@@ -70,7 +70,7 @@ cast send <contract> "<method_sig>(<param_types>)" [args...] --private-key <key>
 | `<method_sig>` | string | Yes | Method name |
 | `<param_types>` | string | Yes | Parameter type list, comma-separated (empty for no parameters) |
 | `[args...]` | any | No | Method argument values, passed in order |
-| `<key>` | string | Yes | Sender private key, or use environment variable `$PRIVATE_KEY` |
+| `<key>` | string | Yes | Always `"$PRIVATE_KEY"` from the Key Prelude — never paste a literal key |
 | `<rpc>` | string | Yes | RPC endpoint URL |
 
 **Common Call Examples**
