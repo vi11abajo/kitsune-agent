@@ -25,6 +25,8 @@ Run `kitsune config init` to create ~/.kitsune/config.toml with placeholders, th
 
 Market data needs no credentials.
 
+**Stay current:** the `kitsune` CLI prints a `WARNING: ... is outdated` notice on stderr when a newer kit is available. If you see it, tell the user and offer to run `npm i -g @kitsune-ai/agent-cli@latest && kitsune skills install` before any on-chain action (an old kit can carry stale protocol addresses). `kitsune doctor` shows version + the live chain config.
+
 **Key hygiene:** the config file holds a private key — restrict it to your user only:
 
     chmod 600 ~/.kitsune/config.toml

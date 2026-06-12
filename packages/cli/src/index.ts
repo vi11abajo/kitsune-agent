@@ -4,6 +4,7 @@ import { extractGlobals, parseFlags, resolveFriendly } from './args.js';
 import { runTool } from './runner.js';
 import { buildClientRegistration, buildRemoteRegistration, SUPPORTED_CLIENTS, DEFAULT_REMOTE_URL } from './setup.js';
 import { bundledSkillsDir, listSkills, installSkills, zipSkills, defaultInstallDir, projectInstallDir } from './skills.js';
+import { updateNotice, getLatest, installedVersion, cmpVersions } from './update-check.js';
 
 function printHelp(): void {
   console.log(`kitsune — Kitsune Agent CLI
@@ -18,6 +19,7 @@ Usage:
   kitsune skills list                           List the bundled Agent Skills
   kitsune config init                           Create ~/.kitsune/config.toml with placeholders
   kitsune config path                           Print the config file location
+  kitsune doctor                                Check kit version + live protocol chain config
   kitsune setup --client <${SUPPORTED_CLIENTS.join('|')}> [--remote] [--npx]
 
 skills install targets:
@@ -56,6 +58,33 @@ async function main(): Promise<void> {
     if (r.cli) console.log(`${r.cli}\n`);
     console.log(`Add this to ${r.configHint}:\n`);
     console.log(JSON.stringify(r.registration, null, 2));
+    return;
+  }
+
+  // doctor — version freshness + live chain config (helps avoid stale protocol data)
+  if (rest[0] === 'doctor') {
+    const current = installedVersion();
+    const latest = await getLatest(true);
+    const behind = latest ? cmpVersions(current, latest) < 0 : false;
+    const versionLine = latest
+      ? `kitsune CLI ${current} (latest ${latest}${behind ? ' — UPDATE AVAILABLE' : ' — up to date'})`
+      : `kitsune CLI ${current} (npm latest unknown — offline?)`;
+    const cfg = resolveConfig(readConfigFile(), { profile });
+    let chainConfig: unknown = 'unavailable';
+    try {
+      const client = new KitsuneApiClient({ apiUrl: cfg.apiUrl, siweDomain: cfg.siweDomain, chainId: cfg.chainId });
+      chainConfig = await client.get('/config', { chainId: cfg.chainId });
+    } catch {
+      /* older backend without /config, or offline */
+    }
+    const report = { version: versionLine, updateAvailable: behind, profile: cfg.profile, chainId: cfg.chainId, apiUrl: cfg.apiUrl, chainConfig };
+    if (json) console.log(JSON.stringify(report));
+    else {
+      console.log(versionLine);
+      if (behind) console.log(`  → npm i -g @kitsune-ai/agent-cli@latest && kitsune skills install`);
+      console.log(`profile: ${cfg.profile} · chainId ${cfg.chainId} · ${cfg.apiUrl}`);
+      console.log(`live chain config: ${JSON.stringify(chainConfig)}`);
+    }
     return;
   }
 
@@ -148,6 +177,15 @@ async function main(): Promise<void> {
     }
     toolName = friendly.tool;
     args = friendly.args;
+  }
+
+  // Best-effort, cached freshness check (stderr only — keeps stdout/--json clean). An outdated kit
+  // can carry stale protocol addresses/schemas, so warn before any protocol interaction.
+  try {
+    const notice = await updateNotice();
+    if (notice) console.error(notice);
+  } catch {
+    /* never block a command on the update check */
   }
 
   const config = resolveConfig(readConfigFile(), { profile, readOnly });

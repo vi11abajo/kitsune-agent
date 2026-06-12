@@ -140,6 +140,34 @@ describe('tool catalog', () => {
     expect(client.authedSend).not.toHaveBeenCalled();
   });
 
+  it('vault_create resolves router/oracle from the backend /config (no stale baked address)', async () => {
+    const client = { get: vi.fn().mockResolvedValue({ dexRouter: '0xROUTER', oracle: '0xORACLE' }) };
+    const chain = { createVault: vi.fn().mockResolvedValue('0xtx') };
+    const ctx = { client, chain, config: { chainId: 1672 } } as unknown as ToolContext;
+    const out = await find('vault_create').handler({}, ctx);
+    expect(client.get).toHaveBeenCalledWith('/config', { chainId: 1672 });
+    expect(chain.createVault).toHaveBeenCalledWith('0xROUTER', '0xORACLE');
+    expect(out).toEqual({ txHash: '0xtx', status: 'submitted' });
+  });
+
+  it('vault_create falls back to the kit chain defaults when /config is unreachable', async () => {
+    const client = { get: vi.fn().mockRejectedValue(new Error('offline')) };
+    const chain = { createVault: vi.fn().mockResolvedValue('0xtx') };
+    const ctx = { client, chain, config: { chainId: 1672 } } as unknown as ToolContext;
+    await find('vault_create').handler({}, ctx);
+    // both undefined → KitsuneChain.createVault applies its own baked defaults
+    expect(chain.createVault).toHaveBeenCalledWith(undefined, undefined);
+  });
+
+  it('vault_create does not call /config when both addresses are passed explicitly', async () => {
+    const client = { get: vi.fn() };
+    const chain = { createVault: vi.fn().mockResolvedValue('0xtx') };
+    const ctx = { client, chain, config: { chainId: 1672 } } as unknown as ToolContext;
+    await find('vault_create').handler({ dexRouter: '0xA', oracle: '0xB' }, ctx);
+    expect(client.get).not.toHaveBeenCalled();
+    expect(chain.createVault).toHaveBeenCalledWith('0xA', '0xB');
+  });
+
   it('marketplace_copy uses authedSend with the copy path (no body)', async () => {
     const client = { authedSend: vi.fn().mockResolvedValue({}) };
     await find('marketplace_copy').handler({ id: '7' }, ctxWith({ client }));

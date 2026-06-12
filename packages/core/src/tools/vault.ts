@@ -45,7 +45,21 @@ export function registerVaultTools(): ToolSpec[] {
         },
       },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.createVault(optStr(a, 'dexRouter') as Address | undefined, optStr(a, 'oracle') as Address | undefined);
+        let dexRouter = optStr(a, 'dexRouter');
+        let oracle = optStr(a, 'oracle');
+        // Prefer the live canonical addresses from the backend so a vault is never created with a
+        // stale router/oracle (which the dApp flags as "Update Router" and which blocks execution).
+        // Fall back to the kit's baked chain defaults if /config is unreachable or old.
+        if (!dexRouter || !oracle) {
+          try {
+            const cfg = (await ctx.client.get('/config', { chainId: ctx.config.chainId })) as { dexRouter?: string; oracle?: string };
+            dexRouter = dexRouter ?? cfg?.dexRouter;
+            oracle = oracle ?? cfg?.oracle;
+          } catch {
+            /* offline / older backend — KitsuneChain.createVault uses the baked chain defaults */
+          }
+        }
+        const txHash = await ctx.chain.createVault(dexRouter as Address | undefined, oracle as Address | undefined);
         return { txHash, status: 'submitted' };
       },
     },
