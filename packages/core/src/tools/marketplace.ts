@@ -40,6 +40,7 @@ export function registerMarketplaceTools(): ToolSpec[] {
           backtestPnl: { type: 'number' }, backtestWinRate: { type: 'number' },
           sourceVaultAddress: { type: 'string' }, sourceStrategyId: { type: 'number' },
           authorAddress: { type: 'string', description: 'author wallet (defaults to your signer address)' },
+          chainId: { type: 'number', description: 'chain the listing belongs to (defaults to your active chain)' },
         },
         required: ['name', 'tradingPair'],
       },
@@ -48,6 +49,7 @@ export function registerMarketplaceTools(): ToolSpec[] {
         if (!authorAddress) throw new Error('marketplace_share requires a signer wallet — add a private_key to your profile.');
         return ctx.client.authedSend('POST', '/marketplace', {
           authorAddress,
+          chainId: optNum(a, 'chainId') ?? ctx.config.chainId,
           name: str(a, 'name'),
           tradingPair: str(a, 'tradingPair'),
           description: optStr(a, 'description'),

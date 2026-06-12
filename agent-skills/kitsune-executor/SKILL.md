@@ -4,11 +4,11 @@ description: "Use this skill to inspect Kitsune (Pharos) executors — the keepe
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.11"
+  version: "0.2.12"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.11", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.12", bins: ["kitsune"] }
 ---
 
 # Kitsune Executors
