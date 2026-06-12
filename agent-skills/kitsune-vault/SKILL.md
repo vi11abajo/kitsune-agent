@@ -4,11 +4,11 @@ description: "Use this skill for Kitsune (Pharos) vault operations: list a walle
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.7"
+  version: "0.2.8"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.7", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.8", bins: ["kitsune"] }
 ---
 
 # Kitsune Vaults
@@ -20,7 +20,7 @@ See [preflight](references/preflight.md) first — including the CRITICAL securi
 | 1 | `kitsune call vault_list --owner <addr>` | jwt | Get the vault owned by an address |
 | 2 | `kitsune call vault_get_balances --vault <addr>` | jwt | Token balances in a vault |
 | 3 | `kitsune call vault_get_allocations --vault <addr>` | jwt | Position / allocation breakdown |
-| 4 | `kitsune call vault_create --dexRouter <addr> --oracle <addr>` | signer | **[CAUTION]** Deploy a new vault on-chain |
+| 4 | `kitsune call vault_create` | signer | **[CAUTION]** Deploy a new vault on-chain — **no address args needed**; the kit fills in the chain's default DEX router + oracle. Only pass `--dexRouter`/`--oracle` for an advanced custom setup. |
 | 5 | `kitsune call vault_withdraw --args '{"vault":"0x..","token":"0x..","amount":"1000000"}'` | signer | **[CAUTION]** Withdraw tokens on-chain |
 
 Add `--json` for machine-readable output.
@@ -38,6 +38,17 @@ User asks: "What tokens are in my vault 0xVAULT...?"
     kitsune call vault_get_balances --vault 0xVAULT000000000000000000000000000000abcd
 
 Returns the per-token balances held by the vault, e.g. `[{ "token": "0xUSDC...", "symbol": "USDC", "balance": "1500000000" }, ...]`.
+
+User asks: "Create a vault for me."
+
+`vault_create` needs **no** router/oracle — the kit supplies the chain defaults (do NOT hunt for or
+invent those addresses). It's a `[CAUTION]` on-chain transaction, so show the exact command and get
+explicit confirmation first:
+
+    kitsune call vault_create
+
+Returns the deploy transaction hash. Each wallet has exactly one vault; strategies live inside it.
+Confirm it exists afterward with `vault_list --owner <your-address>`.
 
 User asks: "Withdraw 1 USDC from my vault back to me."
 
