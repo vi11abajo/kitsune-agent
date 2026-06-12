@@ -15,6 +15,10 @@ describe('constants', () => {
     expect(addressesFor(1672).vaultFactory).toBe('0xeEAeec3354dBeE663966b4EDAF6B47bc378Eca90');
     expect(addressesFor(688689).vaultFactory).toBe('0x1518C8FE94AD3567b7b106386e384b4dD82E1Fb6');
   });
+  it('uses the CURRENT mainnet DEX router + oracle (keep in sync with frontend DEFAULT_DEX_ROUTER/ORACLE, else vaults get the Update-Router banner)', () => {
+    expect(addressesFor(1672).defaultDexRouter).toBe('0xc46fc0e12C12D69BAaA110591C59e79365bFC54f');
+    expect(addressesFor(1672).defaultOracle).toBe('0x50E4553FfAF5DBaEBfE5461c252aa8E43920A2d4');
+  });
   it('throws on unsupported chain ids instead of silently falling back', () => {
     expect(() => addressesFor(1)).toThrow('Unsupported chain id: 1. Supported chain ids: 1672, 688689');
   });

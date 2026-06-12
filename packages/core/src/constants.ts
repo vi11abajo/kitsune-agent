@@ -30,12 +30,14 @@ export interface ChainAddresses {
 }
 
 export const ADDRESSES_BY_CHAIN: Record<number, ChainAddresses> = {
-  // Pharos Mainnet (default)
+  // Pharos Mainnet (default). Keep dexRouter/oracle in sync with the frontend's
+  // DEFAULT_DEX_ROUTER / DEFAULT_ORACLE (frontend/lib/contracts/config.ts) — a vault created with
+  // a stale router triggers the "Update Router" banner and won't execute strategies.
   1672: {
     vaultFactory: '0xeEAeec3354dBeE663966b4EDAF6B47bc378Eca90',
     executorRegistry: '0x16672445b12da078AC446D02c96b81a9686674e4',
-    defaultDexRouter: '0x151CD4688Da2a0F6eec0F1D590C288D0e301ef6B',
-    defaultOracle: '0x46bd32D30cC15F992c4968a4E62CEf0f3c61b875',
+    defaultDexRouter: '0xc46fc0e12C12D69BAaA110591C59e79365bFC54f', // DodoAdapter v3 (current; rollback v2 0x151CD4688Da2a0F6eec0F1D590C288D0e301ef6B)
+    defaultOracle: '0x50E4553FfAF5DBaEBfE5461c252aa8E43920A2d4', // ExecutorPushOracle (current; rollback PharosPushFeedOracle 0x46bd32D30cC15F992c4968a4E62CEf0f3c61b875)
     defaultExecutor: '0x049e88506b69324604D076c3E31be0e70Cb059f5',
   },
   // Pharos Atlantic (testnet)
