@@ -1,4 +1,4 @@
-import { resolveConfig, readConfigFile, KitsuneApiClient, KitsuneChain, allToolSpecs } from '@kitsune-ai/agent-core';
+import { resolveConfig, readConfigFile, scaffoldConfig, configPath, KitsuneApiClient, KitsuneChain, allToolSpecs } from '@kitsune-ai/agent-core';
 import { privateKeyToAccount } from 'viem/accounts';
 import { extractGlobals, parseFlags, resolveFriendly } from './args.js';
 import { runTool } from './runner.js';
@@ -16,6 +16,8 @@ Usage:
   kitsune skills install [--project | --dir <path> | --zip <outdir>]
                                                 Install the bundled Agent Skills
   kitsune skills list                           List the bundled Agent Skills
+  kitsune config init                           Create ~/.kitsune/config.toml with placeholders
+  kitsune config path                           Print the config file location
   kitsune setup --client <${SUPPORTED_CLIENTS.join('|')}> [--remote] [--npx]
 
 skills install targets:
@@ -57,6 +59,23 @@ async function main(): Promise<void> {
     return;
   }
 
+  // config — scaffold / locate the credentials file, no network
+  if (rest[0] === 'config') {
+    const sub = rest[1];
+    if (sub === 'path') {
+      console.log(configPath());
+      return;
+    }
+    if (sub === 'init') {
+      const sc = scaffoldConfig();
+      console.log(sc.created ? `Created ${sc.path}` : `Already exists: ${sc.path}`);
+      console.log('Add your private_key (0x…) under [profiles.mainnet] — never paste it into a chat.');
+      return;
+    }
+    console.error('Usage: kitsune config <init|path>');
+    process.exit(1);
+  }
+
   // skills — local install / listing, no network
   if (rest[0] === 'skills') {
     const sub = rest[1];
@@ -86,6 +105,14 @@ async function main(): Promise<void> {
     const installed = installSkills(root, target);
     for (const s of installed) console.log(`installed ${s.name} v${s.version}`);
     console.log(`\n${installed.length} skills -> ${target}`);
+    // First-run onboarding: make sure a credentials file exists so the key has a
+    // home — agents must never be tempted to inline a key for lack of a config.
+    const sc = scaffoldConfig();
+    console.log(
+      sc.created
+        ? `\nCreated a starter config at ${sc.path}\n  → add your private_key there (0x…). Never paste a key into a chat.`
+        : `\nConfig already present at ${sc.path}.`,
+    );
     return;
   }
 

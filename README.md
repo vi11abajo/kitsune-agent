@@ -163,7 +163,9 @@ kitsune market price BTC USDT
 
 ### 2. Add your credentials (only needed for vault / strategy actions)
 
-The interactive way is to create `~/.kitsune/config.toml`:
+`kitsune skills install` already scaffolds `~/.kitsune/config.toml` with placeholders (or run
+`kitsune config init`; `kitsune config path` prints its location). Open it and fill in your key —
+**never paste a private key into a chat or a command line**:
 
 ```toml
 default_profile = "mainnet"

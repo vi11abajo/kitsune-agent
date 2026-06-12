@@ -6,7 +6,7 @@ Before running any command in this skill:
 npm install -g @kitsune-ai/agent-cli
 
 ## 2 — Configure credentials (only needed for sign-in / on-chain writes)
-Create ~/.kitsune/config.toml (mainnet is the default; the default profile uses REAL funds):
+Run `kitsune config init` to create ~/.kitsune/config.toml with placeholders, then fill in `private_key` (mainnet is the default; the default profile uses REAL funds):
 
     default_profile = "mainnet"
 
