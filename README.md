@@ -133,6 +133,16 @@ AI agent  →  Skills / MCP server / CLI  →  @kitsune-ai/agent-core  →  Kits
 
 ```bash
 npm install -g @kitsune-ai/agent-mcp @kitsune-ai/agent-cli
+kitsune skills install        # 11 Agent Skills -> ~/.claude/skills (Claude Code)
+```
+
+The Skills ship inside the CLI package — no git clone needed. Other targets:
+
+```bash
+kitsune skills install --project        # ./.claude/skills (this project only)
+kitsune skills install --dir <path>     # any agent's skills folder (Claude Agent SDK, custom)
+kitsune skills install --zip ./zips     # one <skill>.zip per skill — upload in Claude Desktop / claude.ai
+kitsune skills list                     # see what's bundled
 ```
 
 Or build from source:
@@ -401,7 +411,10 @@ CLI; `kitsune-bridge` drives the chains directly via Foundry's `cast`.
 | `kitsune-notifications` | Telegram status, preferences, unlink | sign-in |
 | `kitsune-agra` | pALPHA bond NAV history (Agra market on Kitsune USDC) | none |
 
-Skills live in [`agent-skills/`](./agent-skills).
+Skills live in [`agent-skills/`](./agent-skills) and ship inside the `@kitsune-ai/agent-cli` npm package —
+install them with `kitsune skills install` (Claude Code), `--dir <path>` (Claude Agent SDK / custom agents),
+or `--zip <outdir>` (Claude Desktop / claude.ai upload). MCP-only clients (Cursor, Windsurf, VS Code) don't
+need Skills at all — the same catalog is served by `kitsune-mcp`.
 
 ---
 

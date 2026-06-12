@@ -4,11 +4,11 @@ description: "Use this skill when the user asks for market data on Kitsune/Pharo
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.4"
+  version: "0.2.5"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.4", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.5", bins: ["kitsune"] }
 ---
 
 # Kitsune Market Data

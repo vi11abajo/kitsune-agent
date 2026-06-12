@@ -3,6 +3,7 @@ dist/
 *.log
 .DS_Store
 .npmrc
+packages/cli/skills/
 
 # Local-only dev memory & internal docs — must NOT reach this PUBLIC repo
 # (protocol/infra notes live in the separate, private protocol repo)

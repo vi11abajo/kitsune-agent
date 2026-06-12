@@ -3,6 +3,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { extractGlobals, parseFlags, resolveFriendly } from './args.js';
 import { runTool } from './runner.js';
 import { buildClientRegistration, buildRemoteRegistration, SUPPORTED_CLIENTS, DEFAULT_REMOTE_URL } from './setup.js';
+import { bundledSkillsDir, listSkills, installSkills, zipSkills, defaultInstallDir, projectInstallDir } from './skills.js';
 
 function printHelp(): void {
   console.log(`kitsune — Kitsune Agent CLI
@@ -12,7 +13,16 @@ Usage:
   kitsune call <tool> --args '<json>'           Run any tool with JSON args
   kitsune call <tool> --key value ...           Run any tool with flag args
   kitsune tools                                 List all available tools
+  kitsune skills install [--project | --dir <path> | --zip <outdir>]
+                                                Install the bundled Agent Skills
+  kitsune skills list                           List the bundled Agent Skills
   kitsune setup --client <${SUPPORTED_CLIENTS.join('|')}> [--remote] [--npx]
+
+skills install targets:
+  (default)        ~/.claude/skills            (Claude Code, global)
+  --project        ./.claude/skills            (Claude Code, this project)
+  --dir <path>     any agent's skills folder   (Claude Agent SDK, custom)
+  --zip <outdir>   one <skill>.zip per skill   (upload to Claude Desktop / claude.ai)
 
 setup flags:
   --remote   connect to the hosted public read-only server (${DEFAULT_REMOTE_URL})
@@ -44,6 +54,38 @@ async function main(): Promise<void> {
     if (r.cli) console.log(`${r.cli}\n`);
     console.log(`Add this to ${r.configHint}:\n`);
     console.log(JSON.stringify(r.registration, null, 2));
+    return;
+  }
+
+  // skills — local install / listing, no network
+  if (rest[0] === 'skills') {
+    const sub = rest[1];
+    if (sub !== 'install' && sub !== 'list') {
+      console.error('Usage: kitsune skills <install|list> [--project | --dir <path> | --zip <outdir>]');
+      process.exit(1);
+    }
+    const root = bundledSkillsDir();
+    if (!root) {
+      console.error('No bundled skills found (broken install?). Reinstall @kitsune-ai/agent-cli or clone the repo.');
+      process.exit(1);
+    }
+    const flags = parseFlags(rest.slice(2));
+    if (sub === 'list') {
+      const skills = listSkills(root);
+      if (json) console.log(JSON.stringify(skills.map(({ name, version }) => ({ name, version }))));
+      else for (const s of skills) console.log(`${s.name}\tv${s.version}`);
+      return;
+    }
+    if (typeof flags.zip === 'string') {
+      const zips = zipSkills(root, flags.zip);
+      for (const z of zips) console.log(`packed ${z.file}`);
+      console.log(`\n${zips.length} skill zips written. Upload them in Claude Desktop / claude.ai → Settings → Capabilities.`);
+      return;
+    }
+    const target = typeof flags.dir === 'string' ? flags.dir : flags.project ? projectInstallDir() : defaultInstallDir();
+    const installed = installSkills(root, target);
+    for (const s of installed) console.log(`installed ${s.name} v${s.version}`);
+    console.log(`\n${installed.length} skills -> ${target}`);
     return;
   }
 
