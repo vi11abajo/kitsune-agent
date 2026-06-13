@@ -16,7 +16,7 @@ Let your AI agent read markets, manage vaults, and run DCA / grid strategies on-
 ---
 
 > ### 🏆 Built for the Pharos *Skill-to-Agent Dual Cascade* Hackathon
-> A **production toolkit live on Pharos mainnet** — 10 **reusable, composable** Agent Skills plus an MCP
+> A **production toolkit live on Pharos mainnet** — 11 **reusable, composable** Agent Skills plus an MCP
 > server, CLI, and shared core. Each Skill is a self-contained building block; chain them together and an
 > AI agent goes from bridging funds onto Pharos to running an on-chain DCA strategy, all in natural language.
 
@@ -53,7 +53,7 @@ the marketplace.
 It runs as a **local process**. Your private key never leaves your machine — sign-in (SIWE) and on-chain
 transactions are signed **locally** with [viem](https://viem.sh). Fully open source under the MIT license.
 
-It ships as **three standalone pieces around one shared core**, mirroring the OKX Agent Trade Kit design:
+It ships as **three standalone pieces around one shared core**:
 
 | Package | What it is |
 |---|---|
@@ -61,7 +61,7 @@ It ships as **three standalone pieces around one shared core**, mirroring the OK
 | **`@kitsune-ai/agent-cli`** (`kitsune`) | A terminal CLI. Works with shell pipes, cron, and scripts — no AI client needed. Also the runtime behind the Skills. |
 | **`@kitsune-ai/agent-core`** | The shared library: config, REST client (SIWE/JWT), viem chain layer, and the single tool catalog used by both the MCP server and the CLI. |
 
-Plus **10 plug-and-play Skills** for clients that support the Agent Skills protocol — from funding
+Plus **11 plug-and-play Skills** for clients that support the Agent Skills protocol — from funding
 to trading out of the box: bridge funds onto Pharos (`kitsune-bridge`, Circle CCTP V2 / Chainlink
 CCIP) and put them to work (vaults, strategies, market data). One wallet, one config, one kit.
 
@@ -70,7 +70,7 @@ CCIP) and put them to work (vaults, strategies, market data). One wallet, one co
 ```mermaid
 graph LR
   A["AI agent<br/>(Claude · Cursor · OpenAI Agents SDK)"]
-  A --> S["Agent Skills<br/>(10 SKILL.md)"]
+  A --> S["Agent Skills<br/>(11 SKILL.md)"]
   A --> M["kitsune-mcp<br/>MCP server"]
   A --> C["kitsune CLI"]
   S --> C
@@ -422,7 +422,7 @@ need Skills at all — the same catalog is served by `kitsune-mcp`.
 
 ## Safety
 
-Four layers, mirroring the OKX kit:
+Four layers:
 
 1. **Testnet & read-only options** — the default `mainnet` profile uses real funds; run `--profile testnet` (Pharos Atlantic) for risk-free testing.
 2. **Read-only mode** (`--read-only`) — every write tool is removed from the catalog.
@@ -489,7 +489,7 @@ Workspace layout:
 packages/core   @kitsune-ai/agent-core   shared: config, API client, viem chain, tool catalog
 packages/mcp    @kitsune-ai/agent-mcp     stdio MCP server   (bin: kitsune-mcp)
 packages/cli    @kitsune-ai/agent-cli     terminal CLI       (bin: kitsune)
-agent-skills/   10 SKILL.md + shared preflight
+agent-skills/   11 SKILL.md + shared preflight
 ```
 
 Tech: TypeScript (ESM), pnpm workspaces, tsup, vitest, viem, siwe, `@modelcontextprotocol/sdk`. Node ≥18.
