@@ -1,6 +1,7 @@
 import type { Address } from 'viem';
 import type { ToolSpec } from './types.js';
 import { str, optStr, addr } from './types.js';
+import type { DepositToken, DepositRoute } from '../chain/chain.js';
 
 export function registerVaultTools(): ToolSpec[] {
   return [
@@ -61,6 +62,49 @@ export function registerVaultTools(): ToolSpec[] {
         }
         const txHash = await ctx.chain.createVault(dexRouter as Address | undefined, oracle as Address | undefined);
         return { txHash, status: 'submitted' };
+      },
+    },
+    {
+      name: 'vault_deposit', title: 'Deposit Into Vault', module: 'vault', isWrite: true, auth: 'signer',
+      description:
+        'Fund your vault with USDC (the quote asset strategies trade). token is usdc | wpros | native (PROS) or a token address — wpros/native/other are auto-swapped to USDC via DODO first. amount is in the input token base units (USDC 6dp, WPROS/native 18dp). vault defaults to your own vault. For native PROS, leave some balance for gas. [CAUTION] Moves funds on-chain (may wrap + swap + transfer).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          amount: { type: 'string', description: 'amount of the input token in base units (decimal string)' },
+          token: { type: 'string', description: 'usdc (default) | wpros | native | <token address>' },
+          vault: { type: 'string', description: 'vault address (defaults to your vault)' },
+        },
+        required: ['amount'],
+      },
+      handler: async (a, ctx) => {
+        const owner = ctx.chain.address;
+        if (!owner) throw new Error('vault_deposit requires a signer wallet — add a private_key to your profile.');
+        const vault = (optStr(a, 'vault') ? addr(a, 'vault') : await ctx.chain.getVault(owner)) as Address;
+        const raw = (optStr(a, 'token') ?? 'usdc').toLowerCase();
+        const token: DepositToken =
+          raw === 'usdc' || raw === 'wpros' || raw === 'native' ? raw : (addr(a, 'token') as Address);
+        const amount = BigInt(str(a, 'amount'));
+        const usdc = ctx.chain.addresses.usdc;
+        // DODO route provider (fresh per attempt) — same endpoint as market_get_dodo_route.
+        const getRoute = async (fromToken: Address, fromAmount: bigint): Promise<DepositRoute> => {
+          const resp = (await ctx.client.authedGet('/dodo/route', {
+            fromTokenAddress: fromToken,
+            toTokenAddress: usdc,
+            fromAmount: fromAmount.toString(),
+            slippage: 3,
+            userAddr: owner,
+          })) as { data?: { to?: string; data?: string; priceImpact?: string | number } };
+          const r = resp?.data;
+          if (!r?.to || !r?.data) throw new Error('Failed to get a DODO swap route for the deposit.');
+          return {
+            target: r.to as Address,
+            callData: r.data as `0x${string}`,
+            priceImpact: typeof r.priceImpact === 'string' ? parseFloat(r.priceImpact) : r.priceImpact ?? 0,
+          };
+        };
+        const result = await ctx.chain.deposit({ vault, token, amount, getRoute });
+        return { ...result, status: 'submitted' };
       },
     },
     {

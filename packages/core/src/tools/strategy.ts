@@ -40,6 +40,59 @@ const CONFIG_REQUIRED = [
   'maxDcaCount', 'maxTradesPerDay', 'active', 'firstBuyAmount', 'maxPositionSize', 'dcaMultiplier',
 ];
 
+type BalancesResp = { balances?: { token: string; symbol?: string; decimals?: number; balance: string }[] };
+type AllocationsResp = Record<string, { allocated: string }>;
+
+function fmtUnits(v: bigint, decimals: number): string {
+  const neg = v < BigInt(0);
+  const abs = neg ? -v : v;
+  const base = BigInt(10) ** BigInt(decimals);
+  const whole = abs / base;
+  const frac = (abs % base).toString().padStart(decimals, '0').replace(/0+$/, '');
+  return `${neg ? '-' : ''}${whole}${frac ? '.' + frac : ''}`;
+}
+
+/**
+ * Hard funding guard: a strategy must not be created unless the vault holds enough FREE quote
+ * (USDC) to fund it. free = on-chain quote balance − quote already committed to live strategies
+ * (the same model the dApp uses: /vaults/:v/balances − /vaults/:v/allocations). Fails closed.
+ */
+async function assertVaultFunded(a: Record<string, unknown>, ctx: { client: { authedGet: (p: string, q?: Record<string, string | number | undefined>) => Promise<unknown> } }, vault: Address): Promise<void> {
+  const quote = (addr(a, 'quoteToken') as string).toLowerCase();
+  const maxPos = BigInt(str(a, 'maxPositionSize') || '0');
+  const firstBuy = BigInt(str(a, 'firstBuyAmount') || '0');
+  const required = maxPos > BigInt(0) ? maxPos : firstBuy;
+  if (required <= BigInt(0)) return;
+
+  let balancesResp: BalancesResp;
+  let allocsResp: AllocationsResp;
+  try {
+    [balancesResp, allocsResp] = (await Promise.all([
+      ctx.client.authedGet(`/vaults/${vault}/balances`),
+      ctx.client.authedGet(`/vaults/${vault}/allocations`),
+    ])) as [BalancesResp, AllocationsResp];
+  } catch (e) {
+    throw new Error(`Could not verify vault funding before creating the strategy (${(e as Error).message}). Refusing to create — try again.`);
+  }
+
+  const entry = (balancesResp.balances ?? []).find((b) => b.token.toLowerCase() === quote);
+  const decimals = entry?.decimals ?? 6;
+  const symbol = entry?.symbol ?? 'USDC';
+  const balance = BigInt(entry?.balance ?? '0');
+  const allocated = BigInt(allocsResp?.[quote]?.allocated ?? '0');
+  const free = balance > allocated ? balance - allocated : BigInt(0);
+
+  if (required > free) {
+    const deficit = required - free;
+    throw new Error(
+      `InsufficientVaultFunds: this strategy needs ${fmtUnits(required, decimals)} ${symbol} of free funds, ` +
+      `but the vault has only ${fmtUnits(free, decimals)} ${symbol} available ` +
+      `(balance ${fmtUnits(balance, decimals)} − committed ${fmtUnits(allocated, decimals)}). ` +
+      `Deposit at least ${fmtUnits(deficit, decimals)} more ${symbol} (vault_deposit) before creating. vault=${vault}`,
+    );
+  }
+}
+
 export function registerStrategyTools(): ToolSpec[] {
   return [
     // ---- reads (jwt) ----
@@ -111,7 +164,11 @@ export function registerStrategyTools(): ToolSpec[] {
         required: ['vault', ...CONFIG_REQUIRED],
       },
       handler: async (a, ctx) => {
-        const txHash = await ctx.chain.createStrategy(addr(a, 'vault') as Address, buildStrategyConfig(a));
+        const vault = addr(a, 'vault') as Address;
+        const config = buildStrategyConfig(a); // validate inputs before any network call
+        // Hard rule: never create a strategy the vault can't fund.
+        await assertVaultFunded(a, ctx, vault);
+        const txHash = await ctx.chain.createStrategy(vault, config);
         return { txHash, status: 'submitted' };
       },
     },

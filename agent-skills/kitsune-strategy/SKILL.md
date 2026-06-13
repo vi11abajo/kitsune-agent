@@ -4,11 +4,11 @@ description: "Use this skill to manage Kitsune (Pharos) trading strategies end-t
 license: MIT
 metadata:
   author: kitsune
-  version: "0.3.10"
+  version: "0.3.11"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.13", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.14", bins: ["kitsune"] }
 ---
 
 # Kitsune Strategies
@@ -134,9 +134,9 @@ multiplier "10000"–"11000").
 
 **Step 4 — Recommend.** Derive parameters from the bands (three risk tiers — conservative /
 balanced / aggressive — let the user pick), then validate: total-DCA-spend formula vs
-`maxPositionSize`; grid range must straddle the current price; budget vs vault balance
-(`kitsune call vault_get_balances --vault <addr>` — if short, report the shortfall and ask;
-**never deposit or move funds yourself**).
+`maxPositionSize`; grid range must straddle the current price; budget vs **free** vault USDC
+(`vault_get_balances`[USDC] − `vault_get_allocations`[USDC]; funds committed to other strategies
+are not free). If short, the Funding cascade (Step 6.5) covers it.
 
 **Step 5 — Backtest (recommended, needs sign-in).** Before spending gas, dry-run the config:
 
@@ -149,10 +149,27 @@ Show PnL / win-rate. If the user skips the backtest, say so and proceed.
 **Step 6 — Pre-create checklist (all YES or stop and explain):**
 1. [ ] Executor address taken from `executor_list` output?
 2. [ ] No duplicate active strategy on this pair? (`strategy_list` — if one exists, offer update/restart instead)
-3. [ ] Vault quote balance ≥ planned spend?
+3. [ ] Vault **free** USDC (balances − allocations) ≥ planned spend? (if not → Step 6.5)
 4. [ ] Total DCA spend ≤ `maxPositionSize` (formula above)?
 5. [ ] Grid: `gridLowerPrice` < current price < `gridUpperPrice`?
 6. [ ] `dcaMultiplier` within "10000"–"30000"?
+
+**Step 6.5 — Funding (MANDATORY when the vault is short).** A strategy CANNOT be created unless the
+vault holds enough **free USDC** to cover it — `strategy_create` refuses with `InsufficientVaultFunds`
+and sends no transaction. Free USDC = `vault_get_balances`[USDC] − `vault_get_allocations`[USDC].
+
+State the requirement plainly ("this grid needs ≥ 200 USDC free in the vault"), then cascade — each
+money-moving step shows the exact command and takes ONE confirmation:
+
+1. **Vault already funded?** free USDC ≥ required → go to Step 7.
+2. **Funds on Pharos?** Check the wallet via [[kitsune-bridge]] (it reads balances across chains).
+   Enough **USDC / WPROS / PROS** (by value) → fund with a single [[kitsune-vault]] `vault_deposit`
+   — it wraps native PROS and swaps WPROS→USDC automatically (keep a little PROS for gas):
+   - `kitsune call vault_deposit --args '{"amount":"200000000"}'` &nbsp;# 200 USDC
+   - `kitsune call vault_deposit --args '{"amount":"<wei>","token":"wpros"}'` / `'{"...","token":"native"}'`
+3. **Pharos short?** Use [[kitsune-bridge]] to bring USDC (Circle CCTP) or PROS (Chainlink CCIP) onto
+   Pharos from a chain where the user holds funds, then `vault_deposit`.
+4. Re-check free USDC. **Never call `strategy_create` until `free ≥ required`** (the kit enforces this).
 
 **Step 7 — Confirm ONCE, then execute the full chain without re-asking:**
 
@@ -173,7 +190,7 @@ units, tx hash, `[profile: ...]`.
 
 ## Key Rules
 
-- **Never move funds on your own** — no deposits, no withdrawals to fix a shortfall; report and ask.
+- **Funding is allowed, with confirmation** — to cover a shortfall you MAY `vault_deposit` (and bridge in via [[kitsune-bridge]]) per Step 6.5; always show the exact command and take one confirmation. Never withdraw to a third party. A strategy is never created underfunded — `strategy_create` refuses (`InsufficientVaultFunds`).
 - **`allowedExecutor` only from `executor_list`**, `strategyId` only from `strategy_list`/create output. Never fabricate addresses or IDs.
 - **`strategy_update` is full-replace**: read current config with `strategy_get`, change the fields, resubmit ALL on-chain fields.
 - **`strategy_set_config` is a patch**: only the fields you send change.
@@ -201,7 +218,8 @@ units, tx hash, `[profile: ...]`.
 |---|---|
 | Grid range doesn't straddle current price | Re-derive range; creating anyway makes one side dead |
 | Existing active strategy on the pair | Offer update / restart_cycle instead of a duplicate |
-| Vault balance < planned spend | Report shortfall (have vs need); options: smaller size / user deposits / cancel |
+| Vault balance < planned spend | Run the Step 6.5 funding cascade: `vault_deposit` (USDC / WPROS / PROS) or bridge in via [[kitsune-bridge]], then create — or offer a smaller size |
+| `InsufficientVaultFunds` (strategy_create refused) | The vault's free USDC < required; it sent no tx. Fund via Step 6.5 (`vault_deposit`), then retry |
 | `InvalidStrategyConfig` revert | Check: any zero field, `stopLossBps ≥ 10000`, `dcaMultiplier` outside 10000–30000, `maxDcaCount` = 0 |
 | `MaxPositionSizeExceeded` revert | Total DCA spend formula exceeds cap → raise `maxPositionSize` or cut `maxDcaCount`/multiplier |
 | User asks "no DCA, single buy" | `maxDcaCount` must be ≥ 1 on-chain: use 1 (the first buy is buy #1) |

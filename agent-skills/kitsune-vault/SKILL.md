@@ -4,11 +4,11 @@ description: "Use this skill for Kitsune (Pharos) vault operations: list a walle
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.13"
+  version: "0.2.14"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.13", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.14", bins: ["kitsune"] }
 ---
 
 # Kitsune Vaults
@@ -21,7 +21,8 @@ See [preflight](references/preflight.md) first — including the CRITICAL securi
 | 2 | `kitsune call vault_get_balances --vault <addr>` | jwt | Token balances in a vault |
 | 3 | `kitsune call vault_get_allocations --vault <addr>` | jwt | Position / allocation breakdown |
 | 4 | `kitsune call vault_create` | signer | **[CAUTION]** Deploy a new vault on-chain — **no address args needed**; the kit fills in the chain's default DEX router + oracle. Only pass `--dexRouter`/`--oracle` for an advanced custom setup. |
-| 5 | `kitsune call vault_withdraw --args '{"vault":"0x..","token":"0x..","amount":"1000000"}'` | signer | **[CAUTION]** Withdraw tokens on-chain |
+| 5 | `kitsune call vault_deposit --args '{"amount":"200000000"}'` | signer | **[CAUTION]** Fund the vault with USDC. `token` = `usdc` (default) / `wpros` / `native` (PROS) / a token address — non-USDC is auto-swapped to USDC via DODO. `amount` in the input token's base units (USDC 6dp, WPROS/native 18dp). `vault` defaults to your vault. |
+| 6 | `kitsune call vault_withdraw --args '{"vault":"0x..","token":"0x..","amount":"1000000"}'` | signer | **[CAUTION]** Withdraw tokens on-chain |
 
 Add `--json` for machine-readable output.
 
@@ -49,6 +50,24 @@ explicit confirmation first:
 
 Returns the deploy transaction hash. Each wallet has exactly one vault; strategies live inside it.
 Confirm it exists afterward with `vault_list --owner <your-address>`.
+
+User asks: "Put 200 USDC into my vault."
+
+The vault trades in **USDC**. `vault_deposit` is a `[CAUTION]` on-chain action, so show the exact
+command and get explicit confirmation first. Amounts are base units (USDC has 6 decimals, so
+200 USDC = `200000000`):
+
+    kitsune call vault_deposit --args '{"amount":"200000000"}'
+
+If the user only holds **PROS** or **WPROS**, pass `token`: the kit wraps native PROS and/or swaps to
+USDC via DODO in the same call (leave a little PROS for gas):
+
+    kitsune call vault_deposit --args '{"amount":"50000000000000000000","token":"wpros"}'   # 50 WPROS → USDC → vault
+    kitsune call vault_deposit --args '{"amount":"10000000000000000000","token":"native"}'  # 10 PROS  → USDC → vault
+
+Returns the final USDC transfer hash (plus `wrapTxHash`/`swapTxHash` when those steps ran).
+**Fund the vault before creating a strategy** — `strategy_create` refuses if the vault can't cover it
+(see [[kitsune-strategy]]).
 
 User asks: "Withdraw 1 USDC from my vault back to me."
 

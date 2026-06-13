@@ -98,19 +98,88 @@ describe('tool catalog', () => {
     });
   });
 
+  // A client whose vault holds `bal` base units of the quote token and has `alloc` committed.
+  const fundedClient = (quote: string, bal: string, alloc = '0') => ({
+    authedGet: vi.fn().mockImplementation((path: string) => {
+      if (path.endsWith('/balances')) return Promise.resolve({ balances: [{ token: quote, symbol: 'USDC', decimals: 6, balance: bal }] });
+      if (path.endsWith('/allocations')) return Promise.resolve({ [quote.toLowerCase()]: { allocated: alloc } });
+      return Promise.resolve({});
+    }),
+  });
+
   it('strategy_create calls chain.createStrategy and returns a tx result', async () => {
     const chain = { createStrategy: vi.fn().mockResolvedValue('0xabc') };
+    const client = fundedClient(VAULT, '5000000'); // exactly enough for maxPositionSize
     const out = await find('strategy_create').handler({
       vault: VAULT,
       baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
       takeProfitBps: 500, stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
       firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
-    }, ctxWith({ chain }));
+    }, ctxWith({ chain, client }));
     expect(chain.createStrategy).toHaveBeenCalledTimes(1);
     const [vaultArg, cfgArg] = chain.createStrategy.mock.calls[0];
     expect(vaultArg).toBe(VAULT);
     expect(cfgArg.dcaMultiplier).toBe('1500000000000000000');
     expect(out).toEqual({ txHash: '0xabc', status: 'submitted' });
+  });
+
+  it('strategy_create refuses when the vault lacks free funds (hard guard)', async () => {
+    const chain = { createStrategy: vi.fn() };
+    const client = fundedClient(VAULT, '1000000'); // only 1 USDC, strategy needs 5
+    await expect(find('strategy_create').handler({
+      vault: VAULT,
+      baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
+      takeProfitBps: 500, stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
+      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
+    }, ctxWith({ chain, client }))).rejects.toThrow(/InsufficientVaultFunds/);
+    expect(chain.createStrategy).not.toHaveBeenCalled();
+  });
+
+  it('strategy_create counts already-committed allocations as not free', async () => {
+    const chain = { createStrategy: vi.fn() };
+    const client = fundedClient(VAULT, '6000000', '5000000'); // 6 balance − 5 committed = 1 free
+    await expect(find('strategy_create').handler({
+      vault: VAULT,
+      baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
+      takeProfitBps: 500, stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
+      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
+    }, ctxWith({ chain, client }))).rejects.toThrow(/InsufficientVaultFunds/);
+    expect(chain.createStrategy).not.toHaveBeenCalled();
+  });
+
+  it('vault_deposit defaults the vault and forwards token/amount to chain.deposit', async () => {
+    const chain = {
+      address: OWNER,
+      addresses: { usdc: '0xUSDC' },
+      getVault: vi.fn().mockResolvedValue(VAULT),
+      deposit: vi.fn().mockResolvedValue({ txHash: '0xdep', usdcDeposited: '200000000' }),
+    };
+    const out = await find('vault_deposit').handler({ amount: '200000000' }, ctxWith({ chain, client: {} }));
+    expect(chain.getVault).toHaveBeenCalledWith(OWNER);
+    const arg = chain.deposit.mock.calls[0][0];
+    expect(arg.vault).toBe(VAULT);
+    expect(arg.token).toBe('usdc');
+    expect(arg.amount).toBe(200000000n);
+    expect(out).toMatchObject({ txHash: '0xdep', status: 'submitted' });
+  });
+
+  it('vault_deposit accepts native PROS and an explicit vault', async () => {
+    const chain = {
+      address: OWNER,
+      addresses: { usdc: '0xUSDC' },
+      getVault: vi.fn(),
+      deposit: vi.fn().mockResolvedValue({ txHash: '0xdep', usdcDeposited: '0' }),
+    };
+    await find('vault_deposit').handler({ amount: '1000000000000000000', token: 'native', vault: VAULT }, ctxWith({ chain, client: {} }));
+    expect(chain.getVault).not.toHaveBeenCalled();
+    const arg = chain.deposit.mock.calls[0][0];
+    expect(arg.vault).toBe(VAULT);
+    expect(arg.token).toBe('native');
+  });
+
+  it('vault_deposit fails clearly without a signer wallet', async () => {
+    await expect(find('vault_deposit').handler({ amount: '1' }, ctxWith({ chain: {}, client: {} })))
+      .rejects.toThrow(/signer wallet/);
   });
 
   it('strategy_create rejects a non-numeric takeProfitBps instead of passing NaN on-chain', async () => {

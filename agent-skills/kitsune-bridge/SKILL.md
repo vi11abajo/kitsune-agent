@@ -4,7 +4,7 @@ description: "Use this skill when the user wants to move funds between Pharos an
 license: MIT
 metadata:
   author: kitsune
-  version: "0.2.13"
+  version: "0.2.14"
   agent:
     requires: { bins: ["cast", "jq"] }
 ---
@@ -25,6 +25,12 @@ kitsune skill (`~/.kitsune/config.toml`); runs on Foundry's `cast` directly — 
 
 USDC on Pharos (`bridge.USDC.addresses.pharos` in `$SKILL_DIR/assets/tokens.json`) is the same token
 Kitsune vaults use as the quote asset, so bridged funds are immediately usable for deposits.
+
+> **Funding a strategy (see [[kitsune-strategy]] Step 6.5):** this skill's job there is two things —
+> (1) **read** the user's wallet balances across chains to find where funds are, and (2) **bridge**
+> USDC/PROS onto Pharos when Pharos is short. You do NOT need to swap to USDC yourself for a deposit:
+> [[kitsune-vault]] `vault_deposit` accepts `usdc` / `wpros` / `native` and wraps + swaps to USDC on
+> Pharos in one call. So bringing **WPROS or PROS** onto Pharos is enough.
 
 > Routes are technically bidirectional, but the flows, examples and suggestions in this skill are
 > written for **bringing funds onto Pharos**. Execute an outbound bridge only when the user
