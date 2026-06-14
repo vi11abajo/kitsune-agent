@@ -8,7 +8,7 @@ metadata:
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.14", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.16", bins: ["kitsune"] }
 ---
 
 # Kitsune Executors

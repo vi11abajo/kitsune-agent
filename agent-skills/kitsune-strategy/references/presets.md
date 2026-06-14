@@ -44,8 +44,9 @@ Strong-Trend gate first.
 When: ranging market, BB bandwidth 4–8%, no strong bias.
 
 ```bash
-kitsune call strategy_create --args '{"vault":"0x..","baseToken":"<WPROS>","quoteToken":"<USDC>","allowedExecutor":"<from executor_list>","takeProfitBps":500,"stopLossBps":2000,"maxDcaCount":1,"maxTradesPerDay":20,"active":true,"firstBuyAmount":"15000000","maxPositionSize":"200000000","dcaMultiplier":"10000"}'
-# grid buys are flat: 15 USDC per zone; maxPositionSize caps total exposure at 200 USDC
+kitsune call strategy_create --args '{"vault":"0x..","baseToken":"<WPROS>","quoteToken":"<USDC>","allowedExecutor":"<from executor_list>","takeProfitBps":500,"stopLossBps":2000,"maxDcaCount":12,"maxTradesPerDay":48,"active":true,"firstBuyAmount":"15000000","maxPositionSize":"200000000","dcaMultiplier":"10000"}'
+# maxDcaCount = gridCount (12) — the vault caps concurrent open zones at maxDcaCount, so 1 would
+# revert MaxDCACountReached after the first zone. Flat zones: 12 × 15 USDC = 180 ≤ maxPositionSize 200.
 kitsune call strategy_set_config --args '{"vault":"0x..","strategyId":"<id>","strategyType":"grid","gridLowerPrice":0.62,"gridUpperPrice":0.82,"gridCount":12,"gridType":"arithmetic"}'
 kitsune call strategy_set_metadata --args '{"vault":"0x..","strategyId":"<id>","name":"WPROS neutral grid 0.62-0.82"}'
 ```
@@ -59,7 +60,8 @@ When: Trend Score ≥ +1.5 (bullish). Asymmetric range — price in the lower 30
 indicator gate so the grid starts on momentum confirmation, and a trailing TP to ride the trend.
 
 ```bash
-kitsune call strategy_create --args '{"vault":"0x..","baseToken":"<WPROS>","quoteToken":"<USDC>","allowedExecutor":"<from executor_list>","takeProfitBps":1000,"stopLossBps":1500,"maxDcaCount":1,"maxTradesPerDay":20,"active":true,"firstBuyAmount":"15000000","maxPositionSize":"200000000","dcaMultiplier":"10000"}'
+kitsune call strategy_create --args '{"vault":"0x..","baseToken":"<WPROS>","quoteToken":"<USDC>","allowedExecutor":"<from executor_list>","takeProfitBps":1000,"stopLossBps":1500,"maxDcaCount":10,"maxTradesPerDay":40,"active":true,"firstBuyAmount":"15000000","maxPositionSize":"200000000","dcaMultiplier":"10000"}'
+# maxDcaCount = gridCount (10); flat zones 10 × 15 USDC = 150 ≤ maxPositionSize 200.
 kitsune call strategy_set_config --args '{"vault":"0x..","strategyId":"<id>","strategyType":"grid","gridLowerPrice":0.68,"gridUpperPrice":0.86,"gridCount":10,"gridType":"geometric","gridStartCondition":"instant","entryType":"ema","emaFastPeriod":20,"emaSlowPeriod":50,"emaTimeframe":"1h","trailingTpEnabled":true,"trailingTpCallbackPercent":2}'
 kitsune call strategy_set_metadata --args '{"vault":"0x..","strategyId":"<id>","name":"WPROS trend grid (long bias)"}'
 ```

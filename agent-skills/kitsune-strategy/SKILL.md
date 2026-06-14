@@ -4,11 +4,11 @@ description: "Use this skill to manage Kitsune (Pharos) trading strategies end-t
 license: MIT
 metadata:
   author: kitsune
-  version: "0.3.11"
+  version: "0.3.12"
   agent:
     requires: { bins: ["kitsune"] }
     install:
-      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.14", bins: ["kitsune"] }
+      - { kind: node, package: "@kitsune-ai/agent-cli@0.2.16", bins: ["kitsune"] }
 ---
 
 # Kitsune Strategies
@@ -85,7 +85,7 @@ Add `--json` for raw output.
 | `allowedExecutor` | address | MUST come from `kitsune call executor_list` — never invent | Executor |
 | `takeProfitBps` | number | basis points, > 0 (500 = 5%) | Take-profit % |
 | `stopLossBps` | number | basis points, > 0 and < 10000 (1500 = 15%) | Stop-loss % |
-| `maxDcaCount` | number | > 0 (contract rejects 0). Grid ignores it (zones are flat-sized) | Max DCA buys |
+| `maxDcaCount` | number | > 0 (contract rejects 0); on-chain `uint8` so ≤ 255. **DCA/recurring:** max buys. **Grid:** set it = `gridCount` — the vault caps concurrent open zones at `maxDcaCount` (one buy per zone), so a too-low value (e.g. 1) reverts `MaxDCACountReached` once that many zones fill | Max buys (grid: = zones) |
 | `maxTradesPerDay` | number | > 0 | Daily trade cap |
 | `active` | boolean | start active or paused | Active |
 | `firstBuyAmount` | string | **quote-token base units** (USDC ×1e6: 100 USDC = "100000000") | First buy / per-zone amount |
@@ -105,7 +105,7 @@ required: total DCA spend ≤ maxPositionSize
 | Group | Fields (validated range) |
 |---|---|
 | Type | `strategyType`: `dca` \| `grid` \| `recurring` |
-| Grid | `gridLowerPrice` / `gridUpperPrice` (positive **human** prices, e.g. 0.62 — not base units), `gridCount` (int 2–500), `gridType`: `arithmetic` \| `geometric` \| `infinity` \| `reverse`, `gridStartCondition`: `instant` \| `price` (+ `gridTriggerPrice`) |
+| Grid | `gridLowerPrice` / `gridUpperPrice` (positive **human** prices, e.g. 0.62 — not base units), `gridCount` (int 2–500), `gridType`: `arithmetic` \| `geometric` (only these two are implemented; any other value falls back to arithmetic), `gridStartCondition`: `instant` \| `price` (+ `gridTriggerPrice`) |
 | DCA sizing | `dcaOrderAmount` (string), `priceStepPercent` (0–100), `priceStepMultiplier` (0.1–10) |
 | Entry gate | `entryType`: `immediate` \| `rsi` \| `macd` \| `ema` \| `bb` \| `multi`; RSI: `rsiThreshold` 1–99, `rsiPeriod` 2–100, `rsiTimeframe`; MACD: fast 10–15 / slow 20–30 / signal 7–12; EMA: fast 10–30 / slow 40–100; BB: period 15–25, stdDev 1.5–2.5; `entryIndicators` `{logic: AND|OR, indicators[≤10]}` for `multi` |
 | Trailing | `trailingTpEnabled` + `trailingTpCallbackPercent` (0.01–50), same for SL |
@@ -141,7 +141,7 @@ are not free). If short, the Funding cascade (Step 6.5) covers it.
 **Step 5 — Backtest (recommended, needs sign-in).** Before spending gas, dry-run the config:
 
 ```
-kitsune call market_run_backtest --args '{"config":{"pair":"WPROS/USDC","strategyType":"grid","timeframe":"1h","startDate":"2026-03-01","endDate":"2026-06-01","initialOrderAmount":10,"dcaOrderAmount":10,"maxDcaCount":3,"gridLowerPrice":0.62,"gridUpperPrice":0.82,"gridCount":12,"gridType":"arithmetic","takeProfitPercent":5,"stopLossPercent":15,"stopLossEnabled":true,"priceStepPercent":2,"priceStepMultiplier":1,"dcaMultiplier":1.5}}'
+kitsune call market_run_backtest --args '{"config":{"pair":"WPROS/USDC","strategyType":"grid","timeframe":"1h","startDate":"2026-03-01","endDate":"2026-06-01","initialOrderAmount":10,"dcaOrderAmount":10,"maxDcaCount":12,"gridLowerPrice":0.62,"gridUpperPrice":0.82,"gridCount":12,"gridType":"arithmetic","takeProfitPercent":5,"stopLossPercent":15,"stopLossEnabled":true,"priceStepPercent":2,"priceStepMultiplier":1,"dcaMultiplier":1}}'
 ```
 
 Show PnL / win-rate. If the user skips the backtest, say so and proceed.
@@ -153,6 +153,7 @@ Show PnL / win-rate. If the user skips the backtest, say so and proceed.
 4. [ ] Total DCA spend ≤ `maxPositionSize` (formula above)?
 5. [ ] Grid: `gridLowerPrice` < current price < `gridUpperPrice`?
 6. [ ] `dcaMultiplier` within "10000"–"30000"?
+7. [ ] Grid only: `maxDcaCount` = `gridCount` and `dcaMultiplier` = "10000"? (a lower `maxDcaCount` reverts `MaxDCACountReached` at runtime)
 
 **Step 6.5 — Funding (MANDATORY when the vault is short).** A strategy CANNOT be created unless the
 vault holds enough **free USDC** to cover it — `strategy_create` refuses with `InsufficientVaultFunds`
@@ -174,11 +175,13 @@ money-moving step shows the exact command and takes ONE confirmation:
 **Step 7 — Confirm ONCE, then execute the full chain without re-asking:**
 
 ```bash
-# 7a. on-chain risk config (returns txHash)
-kitsune call strategy_create --args '{"vault":"0x..","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":1500,"maxDcaCount":4,"maxTradesPerDay":10,"active":true,"firstBuyAmount":"100000000","maxPositionSize":"900000000","dcaMultiplier":"15000"}'
+# 7a. on-chain risk config (returns txHash). GRID example: maxDcaCount = gridCount (12),
+#     dcaMultiplier "10000" (flat zones), firstBuyAmount = budget/gridCount (900/12 = 75),
+#     maxPositionSize = budget (75 × 12 = 900 ≤ 900 ✓).
+kitsune call strategy_create --args '{"vault":"0x..","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":2000,"maxDcaCount":12,"maxTradesPerDay":48,"active":true,"firstBuyAmount":"75000000","maxPositionSize":"900000000","dcaMultiplier":"10000"}'
 # 7b. find the new strategyId
 kitsune call strategy_list --vault 0x..
-# 7c. executor config (grid example)
+# 7c. executor config (grid example) — gridCount here MUST match maxDcaCount above
 kitsune call strategy_set_config --args '{"vault":"0x..","strategyId":"<id>","strategyType":"grid","gridLowerPrice":0.62,"gridUpperPrice":0.82,"gridCount":12,"gridType":"arithmetic"}'
 # 7d. name it
 kitsune call strategy_set_metadata --args '{"vault":"0x..","strategyId":"<id>","name":"WPROS neutral grid"}'
@@ -196,6 +199,7 @@ units, tx hash, `[profile: ...]`.
 - **`strategy_set_config` is a patch**: only the fields you send change.
 - **Two unit systems**: on-chain amounts = quote base units (USDC ×1e6) as strings; off-chain grid prices = human numbers. Mixing them is the #1 creation error.
 - **`dcaMultiplier` is bps**: "15000" = ×1.5. A 1e18-style value reverts on-chain.
+- **Grid `maxDcaCount` = `gridCount`**: a grid opens one on-chain buy per filled zone and the vault caps concurrent buys at `maxDcaCount`, so a value below `gridCount` (e.g. 1) makes every buy past it revert `MaxDCACountReached`. Keep `dcaMultiplier` "10000" (flat zones — grid genuinely ignores the multiplier, NOT the count) and `maxPositionSize` ≥ `firstBuyAmount × gridCount`. `maxDcaCount` is `uint8` (≤ 255) — keep grids ≤ ~50 zones.
 - After create/update also confirm the executor picked it up: `strategy_get_position` shows the cycle state.
 - Verify after every write; after pause/resume re-read `strategy_get` and check `active`.
 
@@ -222,6 +226,7 @@ units, tx hash, `[profile: ...]`.
 | `InsufficientVaultFunds` (strategy_create refused) | The vault's free USDC < required; it sent no tx. Fund via Step 6.5 (`vault_deposit`), then retry |
 | `InvalidStrategyConfig` revert | Check: any zero field, `stopLossBps ≥ 10000`, `dcaMultiplier` outside 10000–30000, `maxDcaCount` = 0 |
 | `MaxPositionSizeExceeded` revert | Total DCA spend formula exceeds cap → raise `maxPositionSize` or cut `maxDcaCount`/multiplier |
+| `MaxDCACountReached` revert (grid buys keep failing) | Grid `maxDcaCount` < `gridCount`: the vault caps concurrent open zones at `maxDcaCount`. Raise on-chain `maxDcaCount` to `gridCount` via `strategy_update` (full-replace), keeping `maxPositionSize` ≥ `firstBuyAmount × gridCount` |
 | User asks "no DCA, single buy" | `maxDcaCount` must be ≥ 1 on-chain: use 1 (the first buy is buy #1) |
 | Backtest returns 401 | Backtests need sign-in (key in config); reads of public market data don't |
 | User experimenting / unsure | Suggest `--profile testnet` (Pharos Atlantic, no real funds) |

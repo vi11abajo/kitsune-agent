@@ -1,12 +1,18 @@
 {
   "name": "@kitsune-ai/agent-mcp",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "MCP server exposing the Kitsune (Pharos) DeFi protocol to AI agents.",
   "license": "MIT",
   "type": "module",
-  "files": ["dist"],
-  "publishConfig": { "access": "public" },
-  "bin": { "kitsune-mcp": "./dist/index.js" },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "kitsune-mcp": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run"

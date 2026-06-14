@@ -1,12 +1,19 @@
 {
   "name": "@kitsune-ai/agent-cli",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "Terminal CLI for the Kitsune (Pharos) DeFi protocol; also the backend for Kitsune Skills.",
   "license": "MIT",
   "type": "module",
-  "files": ["dist", "skills"],
-  "publishConfig": { "access": "public" },
-  "bin": { "kitsune": "./dist/index.js" },
+  "files": [
+    "dist",
+    "skills"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "kitsune": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsup && node scripts/copy-skills.mjs",
     "test": "vitest run"

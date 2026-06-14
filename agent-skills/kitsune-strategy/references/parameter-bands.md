@@ -104,8 +104,12 @@ gridCount = clamp(round(width% / spacing%), 2, 500)
 BB bandwidth = (BB_upper − BB_lower) / BB_middle × 100
 ```
 
-Per-zone size: `firstBuyAmount = budget_for_grid / number_of_buy_zones` (grid buys are flat —
-`dcaMultiplier` is ignored by grid, set it "10000"; `maxDcaCount` is ignored too, set 1+).
+Per-zone size: `firstBuyAmount = budget_for_grid / gridCount` (grid buys are flat — set
+`dcaMultiplier` "10000"; the multiplier is genuinely ignored by grid sizing). **`maxDcaCount`
+is NOT ignored: set it = `gridCount`.** The vault opens one buy per filled zone and caps
+concurrent buys at `maxDcaCount`, so anything lower (e.g. 1) reverts `MaxDCACountReached` once
+that many zones fill. Ensure `maxPositionSize ≥ firstBuyAmount × gridCount`. (`maxDcaCount` is
+`uint8` ≤ 255 — keep grids ≤ ~50 zones.)
 `gridType`: `arithmetic` default; `geometric` for wide ranges (>10%).
 
 ## Risk Tiers (present all three, user picks)
