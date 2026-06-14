@@ -141,7 +141,7 @@ are not free). If short, the Funding cascade (Step 6.5) covers it.
 **Step 5 — Backtest (recommended, needs sign-in).** Before spending gas, dry-run the config:
 
 ```
-kitsune call market_run_backtest --args '{"config":{"pair":"WPROS/USDC","strategyType":"grid","timeframe":"1h","startDate":"2026-03-01","endDate":"2026-06-01","initialOrderAmount":10,"gridLowerPrice":0.62,"gridUpperPrice":0.82,"gridCount":12,"gridType":"arithmetic","takeProfitPercent":5,"stopLossPercent":15,"stopLossEnabled":true}}'
+kitsune call market_run_backtest --args '{"config":{"pair":"WPROS/USDC","strategyType":"grid","timeframe":"1h","startDate":"2026-03-01","endDate":"2026-06-01","initialOrderAmount":10,"dcaOrderAmount":10,"maxDcaCount":3,"gridLowerPrice":0.62,"gridUpperPrice":0.82,"gridCount":12,"gridType":"arithmetic","takeProfitPercent":5,"stopLossPercent":15,"stopLossEnabled":true,"priceStepPercent":2,"priceStepMultiplier":1,"dcaMultiplier":1.5}}'
 ```
 
 Show PnL / win-rate. If the user skips the backtest, say so and proceed.

@@ -50,7 +50,10 @@ wallet_address = ""
  */
 export function scaffoldConfig(target: string = configPath()): { created: boolean; path: string } {
   if (existsSync(target)) return { created: false, path: target };
-  mkdirSync(dirname(target), { recursive: true });
+  // L-sync-9: create ~/.kitsune as 0700 (owner-only) — the directory may hold the update-check
+  // cache alongside the 0600 config.toml; default umask perms leave it group/other-readable on
+  // shared POSIX hosts. mode is a no-op on Windows.
+  mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
   writeFileSync(target, CONFIG_TEMPLATE, { encoding: 'utf-8', mode: 0o600 });
   try {
     chmodSync(target, 0o600); // best-effort; no-op on Windows

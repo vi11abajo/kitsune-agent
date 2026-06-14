@@ -15,13 +15,13 @@ describe('strategy config encoding', () => {
     active: true,
     firstBuyAmount: '1000000',
     maxPositionSize: '5000000',
-    dcaMultiplier: '1500000000000000000',
+    dcaMultiplier: '15000',
   };
 
   it('maps fields to the struct order from IUserVault.sol', () => {
     const tuple = toStrategyTuple(input);
     expect(tuple.baseToken).toBe(input.baseToken);
-    expect(tuple.dcaMultiplier).toBe(1500000000000000000n);
+    expect(tuple.dcaMultiplier).toBe(15000n);
     expect(tuple.firstBuyAmount).toBe(1000000n);
     expect(tuple.takeProfitBps).toBe(500);
   });

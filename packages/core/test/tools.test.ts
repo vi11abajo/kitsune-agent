@@ -114,12 +114,12 @@ describe('tool catalog', () => {
       vault: VAULT,
       baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
       takeProfitBps: 500, stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
-      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
+      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '15000',
     }, ctxWith({ chain, client }));
     expect(chain.createStrategy).toHaveBeenCalledTimes(1);
     const [vaultArg, cfgArg] = chain.createStrategy.mock.calls[0];
     expect(vaultArg).toBe(VAULT);
-    expect(cfgArg.dcaMultiplier).toBe('1500000000000000000');
+    expect(cfgArg.dcaMultiplier).toBe('15000');
     expect(out).toEqual({ txHash: '0xabc', status: 'submitted' });
   });
 
@@ -130,7 +130,7 @@ describe('tool catalog', () => {
       vault: VAULT,
       baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
       takeProfitBps: 500, stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
-      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
+      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '15000',
     }, ctxWith({ chain, client }))).rejects.toThrow(/InsufficientVaultFunds/);
     expect(chain.createStrategy).not.toHaveBeenCalled();
   });
@@ -142,7 +142,7 @@ describe('tool catalog', () => {
       vault: VAULT,
       baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
       takeProfitBps: 500, stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
-      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
+      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '15000',
     }, ctxWith({ chain, client }))).rejects.toThrow(/InsufficientVaultFunds/);
     expect(chain.createStrategy).not.toHaveBeenCalled();
   });
@@ -188,7 +188,7 @@ describe('tool catalog', () => {
       vault: VAULT,
       baseToken: OWNER, quoteToken: VAULT, allowedExecutor: EXECUTOR,
       takeProfitBps: 'oops', stopLossBps: 1000, maxDcaCount: 5, maxTradesPerDay: 3, active: true,
-      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '1500000000000000000',
+      firstBuyAmount: '1000000', maxPositionSize: '5000000', dcaMultiplier: '15000',
     }, ctxWith({ chain }))).rejects.toThrow(/takeProfitBps/);
     expect(chain.createStrategy).not.toHaveBeenCalled();
   });

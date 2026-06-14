@@ -58,6 +58,17 @@ export function makeRateLimiter(maxPerMin: number) {
       for (const [k, v] of hits) {
         if (now > v.resetAt) hits.delete(k);
       }
+      // L-sync-8: a single-window flood of unique (possibly spoofed) IPs leaves nothing expired to
+      // sweep, so the map could still grow unbounded. Evict the oldest (earliest-resetAt) entry to
+      // keep it bounded at MAX_TRACKED_IPS.
+      if (hits.size > MAX_TRACKED_IPS) {
+        let oldestKey: string | undefined;
+        let oldestResetAt = Infinity;
+        for (const [k, v] of hits) {
+          if (v.resetAt < oldestResetAt) { oldestResetAt = v.resetAt; oldestKey = k; }
+        }
+        if (oldestKey !== undefined) hits.delete(oldestKey);
+      }
     }
     const e = hits.get(ip);
     if (!e || now > e.resetAt) {

@@ -25,8 +25,13 @@ Read-only. See [preflight](references/preflight.md) first — including the CRIT
 ## Sign-in required (read-only, no funds moved)
 | # | Command | Description |
 |---|---------|-------------|
-| 5 | `kitsune call market_run_backtest --args '{"config":{"pair":"WPROS/USDC","strategyType":"dca","timeframe":"1h","startDate":"2024-01-01","endDate":"2024-03-01","initialOrderAmount":100,"dcaOrderAmount":50,"takeProfitPercent":5,"stopLossPercent":10,"stopLossEnabled":true}}'` | Backtest a strategy config |
+| 5 | `kitsune call market_run_backtest --args '{"config":{"pair":"WPROS/USDC","strategyType":"dca","timeframe":"1h","startDate":"2024-01-01","endDate":"2024-03-01","initialOrderAmount":100,"dcaOrderAmount":50,"maxDcaCount":3,"takeProfitPercent":5,"stopLossPercent":10,"stopLossEnabled":true,"priceStepPercent":2,"priceStepMultiplier":1,"dcaMultiplier":1.5}}'` | Backtest a strategy config |
 | 6 | `kitsune call market_get_dodo_route --args '{"fromToken":"0x..","toToken":"0x..","fromAmount":"1000000"}'` | DODO swap route / quote |
+
+> `market_run_backtest` requires `maxDcaCount`, `priceStepPercent`, `priceStepMultiplier` and
+> `dcaMultiplier` in addition to the dates/amounts (omitting any returns HTTP 400). Note the backtest
+> `dcaMultiplier` is a **plain ratio** (0.1–10, e.g. `1.5` = ×1.5) — NOT the bps string ("10000"–"30000")
+> that `strategy_create` takes on-chain.
 
 Add `--json` for machine-readable output.
 
