@@ -12,13 +12,19 @@ export function extractGlobals(argv: string[]): Globals {
   let json = false;
   let readOnly = false;
   let profile: string | undefined;
-  for (let i = 0; i < argv.length; i++) {
+  let i = 0;
+  for (; i < argv.length; i++) {
     const t = argv[i];
+    // I-7: a `--` sentinel ends global-flag parsing. Everything after it is passed through
+    // verbatim, so a tool arg whose name collides with a global can be escaped:
+    //   kitsune call some_tool -- --profile <toolValue>
+    if (t === '--') { i++; break; }
     if (t === '--json') json = true;
     else if (t === '--read-only') readOnly = true;
     else if (t === '--profile') profile = argv[++i];
     else rest.push(t);
   }
+  for (; i < argv.length; i++) rest.push(argv[i]);
   return { json, readOnly, profile, rest };
 }
 
