@@ -30,7 +30,8 @@ export function createServer(config: KitsuneConfig): Server {
   const tools = buildTools(config);
   const toolMap = new Map(tools.map(t => [t.name, t]));
 
-  const server = new Server({ name: 'kitsune-agent-mcp', version: '0.2.13' }, { capabilities: { tools: {} } });
+  // I-8: keep in sync with packages/mcp/package.json version (advertised in the MCP handshake).
+  const server = new Server({ name: 'kitsune-agent-mcp', version: '0.2.14' }, { capabilities: { tools: {} } });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: buildMcpToolList(config) }));
 

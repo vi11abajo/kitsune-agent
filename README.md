@@ -25,7 +25,7 @@ Let your AI agent read markets, manage vaults, and run DCA / grid strategies on-
 ## ⚡ Try it in 30 seconds (no wallet)
 
 Point any MCP client at the **hosted, read-only** endpoint — no install, no private key. You get the
-**8 public market tools** (prices, candles, indicators, DODO pools, backtests) with zero setup:
+**9 public read-only tools** (prices, candles, indicators, DODO pools, NAV) with zero setup:
 
 ```bash
 # Claude Code — HTTP transport
@@ -94,7 +94,7 @@ AI agent  →  Skills / MCP server / CLI  →  @kitsune-ai/agent-core  →  Kits
 
 | Feature | Details |
 |---|---|
-| **51 tools across 10 modules** | market · vault · strategy · portfolio · marketplace · executor · referral · fees · notifications · agra |
+| **52 tools across 10 modules** | market · vault · strategy · portfolio · marketplace · executor · referral · fees · notifications · agra |
 | **Cross-chain bridging** | native USDC (Circle CCTP V2) and PROS (Chainlink CCIP) between Pharos and Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, BSC — same wallet as everything else |
 | **Market data** | prices, OHLCV candles, technical indicators (RSI/MACD/EMA/Bollinger), DODO pools, backtests |
 | **Vaults** | list, balances, allocations, create, withdraw |
@@ -382,7 +382,7 @@ kitsune call vault_list --owner 0xYourAddress
 kitsune call strategy_create --args '{"vault":"0x..","baseToken":"0x..","quoteToken":"0x..","allowedExecutor":"0x..","takeProfitBps":500,"stopLossBps":1000,"maxDcaCount":5,"maxTradesPerDay":3,"active":true,"firstBuyAmount":"1000000","maxPositionSize":"15000000","dcaMultiplier":"15000"}'
 
 # Discoverability
-kitsune tools                       # list all 51 tools
+kitsune tools                       # list all 52 tools
 kitsune setup --client cursor       # print MCP registration
 
 # Pipes & scripting

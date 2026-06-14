@@ -294,7 +294,7 @@ cast send $PROS_ETH "approve(address,uint256)" $ROUTER_ETH $AMOUNT \
 cast send $ROUTER_ETH \
   "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))" \
   $PHAROS_SELECTOR \
-  "($RECEIVER,0x,[$PROS_ETH,$AMOUNT)],0x0000000000000000000000000000000000000000,0x)" \
+  "($RECEIVER,0x,[($PROS_ETH,$AMOUNT)],0x0000000000000000000000000000000000000000,0x)" \
   --value 2000000000000000 \
   --rpc-url $ETH_RPC \
   --private-key $PRIVATE_KEY
