@@ -1,6 +1,6 @@
 {
   "name": "@kitsune-ai/agent-cli",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "description": "Terminal CLI for the Kitsune (Pharos) DeFi protocol; also the backend for Kitsune Skills.",
   "license": "MIT",
   "type": "module",

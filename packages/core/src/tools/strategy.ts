@@ -267,10 +267,37 @@ export function registerStrategyTools(): ToolSpec[] {
         required: ['vault', 'strategyId'],
       },
       handler: async (a, ctx) => {
+        const vault = addr(a, 'vault');
+        const strategyId = seg(a, 'strategyId');
+        // Defense-in-depth: a grid opens one on-chain buy per filled zone and the vault caps
+        // concurrent buys at maxDcaCount, so a grid needs maxDcaCount >= gridCount or every buy
+        // past it reverts MaxDCACountReached on-chain. maxDcaCount is set by a separate call
+        // (strategy_create/update), so verify it here before marking this strategy a grid.
+        if (a.strategyType === 'grid') {
+          const gridCount = optNum(a, 'gridCount');
+          if (gridCount !== undefined) {
+            let onChainMdc: number | undefined;
+            try {
+              const s = (await ctx.client.authedGet(`/vaults/${vault}/strategies/${strategyId}`)) as { maxDcaCount?: number };
+              onChainMdc = typeof s?.maxDcaCount === 'number' ? s.maxDcaCount : undefined;
+            } catch {
+              onChainMdc = undefined; // can't verify (e.g. not yet indexed) — don't block on infra
+            }
+            if (onChainMdc !== undefined && onChainMdc < gridCount) {
+              const needed = Math.min(gridCount, 255); // maxDcaCount is uint8
+              throw new Error(
+                `Grid maxDcaCount too low: this strategy's on-chain maxDcaCount is ${onChainMdc}, but the grid ` +
+                `has ${gridCount} zones. The vault caps concurrent open zones at maxDcaCount, so every buy past ` +
+                `zone ${onChainMdc} would revert MaxDCACountReached. Raise on-chain maxDcaCount to ${needed} via ` +
+                `strategy_update (full-replace; maxDcaCount is uint8, max 255) before setting the grid config.`,
+              );
+            }
+          }
+        }
         const body: Record<string, unknown> = { ...a };
         delete body.vault;
         delete body.strategyId;
-        return ctx.client.authedSend('PUT', `/vaults/${addr(a, 'vault')}/strategies/${seg(a, 'strategyId')}/metadata`, body);
+        return ctx.client.authedSend('PUT', `/vaults/${vault}/strategies/${strategyId}/metadata`, body);
       },
     },
     {

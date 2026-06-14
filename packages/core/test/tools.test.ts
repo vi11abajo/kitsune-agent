@@ -261,6 +261,53 @@ describe('tool catalog', () => {
     expect(client.authedSend).toHaveBeenCalledWith('PUT', `/vaults/${VAULT}/strategies/3/metadata`, { strategyType: 'grid', gridCount: 20 });
   });
 
+  it('strategy_set_config blocks a grid whose on-chain maxDcaCount is below gridCount', async () => {
+    const client = {
+      authedGet: vi.fn().mockResolvedValue({ maxDcaCount: 1 }),
+      authedSend: vi.fn().mockResolvedValue({}),
+    };
+    await expect(find('strategy_set_config').handler(
+      { vault: VAULT, strategyId: '3', strategyType: 'grid', gridCount: 6 },
+      ctxWith({ client }),
+    )).rejects.toThrow(/maxDcaCount/);
+    expect(client.authedGet).toHaveBeenCalledWith(`/vaults/${VAULT}/strategies/3`);
+    expect(client.authedSend).not.toHaveBeenCalled();
+  });
+
+  it('strategy_set_config allows a grid whose maxDcaCount covers gridCount', async () => {
+    const client = {
+      authedGet: vi.fn().mockResolvedValue({ maxDcaCount: 6 }),
+      authedSend: vi.fn().mockResolvedValue({}),
+    };
+    await find('strategy_set_config').handler(
+      { vault: VAULT, strategyId: '3', strategyType: 'grid', gridCount: 6 },
+      ctxWith({ client }),
+    );
+    expect(client.authedSend).toHaveBeenCalledWith('PUT', `/vaults/${VAULT}/strategies/3/metadata`, { strategyType: 'grid', gridCount: 6 });
+  });
+
+  it('strategy_set_config does not read maxDcaCount for non-grid configs', async () => {
+    const client = { authedGet: vi.fn(), authedSend: vi.fn().mockResolvedValue({}) };
+    await find('strategy_set_config').handler(
+      { vault: VAULT, strategyId: '3', strategyType: 'dca', priceStepPercent: 2 },
+      ctxWith({ client }),
+    );
+    expect(client.authedGet).not.toHaveBeenCalled();
+    expect(client.authedSend).toHaveBeenCalled();
+  });
+
+  it('strategy_set_config proceeds for a grid when the maxDcaCount read fails (not yet indexed)', async () => {
+    const client = {
+      authedGet: vi.fn().mockRejectedValue(new Error('not found')),
+      authedSend: vi.fn().mockResolvedValue({}),
+    };
+    await find('strategy_set_config').handler(
+      { vault: VAULT, strategyId: '3', strategyType: 'grid', gridCount: 6 },
+      ctxWith({ client }),
+    );
+    expect(client.authedSend).toHaveBeenCalled();
+  });
+
   it('notifications_set_preferences PUTs the args as body', async () => {
     const client = { authedSend: vi.fn().mockResolvedValue({}) };
     await find('notifications_set_preferences').handler({ notifyBuy: false }, ctxWith({ client }));
