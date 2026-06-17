@@ -76,6 +76,31 @@ export function registerMarketTools(): ToolSpec[] {
         }),
     },
     {
+      name: 'market_get_grid_cost', title: 'Get Grid Cost Estimate', module: 'market', isWrite: false, auth: 'none',
+      description: 'Round-trip cost estimate (costPct, PERCENT) for a grid on BASE/QUOTE token addresses, with recommendedMaxZones / recommendedMinStepPct and a source badge (measured|default). A grid is only profitable when its per-zone step return exceeds costPct: netPerCycle% = (per-zone step %) - costPct must be > 0. No funds moved.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          base: { type: 'string', description: 'base token address (0x...)' },
+          quote: { type: 'string', description: 'quote token address (0x...)' },
+          upper: { type: 'number', description: 'grid upper price (enables recommendations)' },
+          lower: { type: 'number', description: 'grid lower price (enables recommendations)' },
+          gridType: { type: 'string', description: 'arithmetic | geometric' },
+          gridCount: { type: 'number', description: 'number of zones' },
+        },
+        required: ['base', 'quote'],
+      },
+      handler: async (a, ctx) =>
+        ctx.client.get('/grid/cost-estimate', {
+          base: str(a, 'base'),
+          quote: str(a, 'quote'),
+          upper: optNum(a, 'upper'),
+          lower: optNum(a, 'lower'),
+          gridType: optStr(a, 'gridType'),
+          gridCount: optNum(a, 'gridCount'),
+        }),
+    },
+    {
       name: 'market_run_backtest', title: 'Run Backtest', module: 'market', isWrite: false, auth: 'jwt',
       description: 'Run a strategy backtest simulation (no funds moved; requires sign-in). config requires: pair (BASE/QUOTE), strategyType (dca|grid|recurring), timeframe (1m..1d), startDate, endDate; plus strategy params (e.g. initialOrderAmount, dcaOrderAmount, takeProfitPercent, stopLossPercent, stopLossEnabled; grid: gridUpperPrice, gridLowerPrice, gridCount).',
       inputSchema: {

@@ -57,6 +57,20 @@ describe('tool catalog', () => {
     expect(out).toEqual({ price: 42 });
   });
 
+  it('market_get_grid_cost is public and calls client.get with the cost-estimate path', async () => {
+    const client = { get: vi.fn().mockResolvedValue({ costPct: 1.2, source: 'measured' }) };
+    const tool = find('market_get_grid_cost');
+    expect(tool.auth).toBe('none');
+    expect(tool.isWrite).toBe(false);
+    await tool.handler(
+      { base: '0xAAA', quote: '0xBBB', upper: 0.65, lower: 0.5, gridType: 'arithmetic', gridCount: 20 },
+      ctxWith({ client }),
+    );
+    expect(client.get).toHaveBeenCalledWith('/grid/cost-estimate', {
+      base: '0xAAA', quote: '0xBBB', upper: 0.65, lower: 0.5, gridType: 'arithmetic', gridCount: 20,
+    });
+  });
+
   it('vault_list uses authedGet', async () => {
     const client = { authedGet: vi.fn().mockResolvedValue({ vaults: [] }) };
     await find('vault_list').handler({ owner: OWNER }, ctxWith({ client }));
