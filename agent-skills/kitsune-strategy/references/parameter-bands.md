@@ -48,18 +48,30 @@ Score ≥ +1.5 → bullish bias · ≤ −1.5 → bearish bias · else → neutr
 - Buying strategies (DCA, grid): nearest swing low below current price; fallback — lowest low of
   the 20 candles. Safety buys should land near it, not in empty air far below.
 
-## Cost Floor (replaces CEX fee floors)
+## Cost Floor — grid break-even (use `market_get_grid_cost`)
 
-A round trip on Kitsune = two DODO swaps + protocol fees. Estimate the real cost: quote a route
-with `market_get_dodo_route` and compare against mid-price; call the round-trip cost `RT%`
-(typically well under 1%, but VERIFY — never assume).
+A round trip on Kitsune = two DODO swaps + protocol fees, and the engine's decision price can
+diverge from the pool. Get the real round-trip cost `C` with `market_get_grid_cost` (pass the pair's
+token ADDRESSES + grid `upper`/`lower`/`gridCount`/`gridType`); it returns `costPct`, a `source`
+badge (`measured`|`default`), and `recommendedMaxZones` / `recommendedMinStepPct`.
+
+A grid is profitable only when each cycle's gross step beats `C`:
 
 ```
-takeProfit floor:   takeProfitBps ≥ max(ATR% × 0.3, RT% × 2) × 100
-grid spacing floor: spacing% ≥ max(0.5%, RT% × 3)
+perZoneStep% = arithmetic: (upper − lower)/gridCount/upper × 100   (worst cycle, top of range)
+               geometric:  ((upper/lower)^(1/gridCount) − 1) × 100
+netPerCycle% = perZoneStep% − costPct
 ```
 
-A grid whose per-cell profit is below round-trip cost grinds money into fees.
+- `netPerCycle% ≤ 0` → **HARD STOP**: do NOT call `strategy_create`. Reduce `gridCount` to
+  `recommendedMaxZones` (or widen the range) until `netPerCycle% > 0`. The backend reconfigure gate
+  and the create UI enforce the same floor server-side.
+- `0 < netPerCycle% < 0.5%` → thin margin: warn the user; proceed only on explicit OK.
+- A `source:"default"` cost is advisory (no measured history yet) — don't over-refuse wide grids.
+
+For `takeProfit` on DCA/recurring, still keep `takeProfitBps ≥ max(ATR% × 0.3, costPct × 2) × 100`.
+(If `market_get_grid_cost` is unavailable, fall back to a `market_get_dodo_route` mid-vs-quote
+estimate of the round-trip cost — but prefer the tool.)
 
 ## DCA Bands (Kitsune field names)
 
@@ -104,6 +116,9 @@ gridCount = clamp(round(width% / spacing%), 2, 500)
 BB bandwidth = (BB_upper − BB_lower) / BB_middle × 100
 ```
 
+Then clamp `gridCount ≤ recommendedMaxZones` (from `market_get_grid_cost`) so every cycle clears
+cost — see the Cost Floor section.
+
 Per-zone size: `firstBuyAmount = budget_for_grid / gridCount` (grid buys are flat — set
 `dcaMultiplier` "10000"; the multiplier is genuinely ignored by grid sizing). **`maxDcaCount`
 is NOT ignored: set it = `gridCount`.** The vault opens one buy per filled zone and caps
@@ -127,7 +142,7 @@ Never put more than the tier's budget share into one strategy; keep reserve for 
 1. Cumulative DCA spend ≤ `maxPositionSize` (contract-enforced — pre-check it).
 2. Cumulative spend ≤ vault quote balance (else report shortfall; never auto-deposit).
 3. Final DCA depth lands near structure, not far beyond it.
-4. Grid: range straddles current price; spacing ≥ floor; per-cell profit > round-trip cost.
+4. Grid: range straddles current price; `netPerCycle%` (per-zone step% − `costPct` from `market_get_grid_cost`) > 0 — else HARD STOP, reduce `gridCount` to `recommendedMaxZones`.
 5. `takeProfitBps` above the cost floor; `stopLossBps` < 10000.
 6. Setup still matches the user's stated risk tolerance.
 
