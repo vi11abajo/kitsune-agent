@@ -1,6 +1,6 @@
 ﻿{
   "name": "@kitsune-ai/agent-mcp",
-  "version": "0.2.19",
+  "version": "0.2.20",
   "description": "MCP server exposing the Kitsune (Pharos) DeFi protocol to AI agents.",
   "license": "MIT",
   "type": "module",

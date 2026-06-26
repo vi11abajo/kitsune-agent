@@ -169,7 +169,7 @@ export function registerStrategyTools(): ToolSpec[] {
         // Hard rule: never create a strategy the vault can't fund.
         await assertVaultFunded(a, ctx, vault);
         const txHash = await ctx.chain.createStrategy(vault, config);
-        return { txHash, status: 'submitted' };
+        return { txHash, status: 'confirmed' };
       },
     },
     {
@@ -182,7 +182,7 @@ export function registerStrategyTools(): ToolSpec[] {
       },
       handler: async (a, ctx) => {
         const txHash = await ctx.chain.updateStrategy(addr(a, 'vault') as Address, BigInt(str(a, 'strategyId')), buildStrategyConfig(a));
-        return { txHash, status: 'submitted' };
+        return { txHash, status: 'confirmed' };
       },
     },
     {
@@ -191,7 +191,7 @@ export function registerStrategyTools(): ToolSpec[] {
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) => {
         const txHash = await ctx.chain.pauseStrategy(addr(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
-        return { txHash, status: 'submitted' };
+        return { txHash, status: 'confirmed' };
       },
     },
     {
@@ -200,7 +200,7 @@ export function registerStrategyTools(): ToolSpec[] {
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) => {
         const txHash = await ctx.chain.resumeStrategy(addr(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
-        return { txHash, status: 'submitted' };
+        return { txHash, status: 'confirmed' };
       },
     },
     {
@@ -209,7 +209,7 @@ export function registerStrategyTools(): ToolSpec[] {
       inputSchema: { type: 'object', properties: { vault: { type: 'string' }, strategyId: { type: 'string' } }, required: ['vault', 'strategyId'] },
       handler: async (a, ctx) => {
         const txHash = await ctx.chain.withdrawStrategy(addr(a, 'vault') as Address, BigInt(str(a, 'strategyId')));
-        return { txHash, status: 'submitted' };
+        return { txHash, status: 'confirmed' };
       },
     },
 

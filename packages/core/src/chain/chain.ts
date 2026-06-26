@@ -54,6 +54,18 @@ export class KitsuneChain {
     return { wallet: this.wallet, account: this.account };
   }
 
+  /**
+   * Wait for a submitted tx to be mined (1 confirmation) and surface on-chain failure to the caller.
+   * Without this, write methods returned the hash the instant it was broadcast — so an agent could
+   * not tell a mined success from a reverted tx, and a follow-up read could race the unmined state.
+   * Bounded by `timeout` so a stuck/dropped tx fails loudly instead of hanging the MCP call forever.
+   */
+  private async waitOrThrow(hash: `0x${string}`): Promise<`0x${string}`> {
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash, confirmations: 1, timeout: 60_000 });
+    if (receipt.status === 'reverted') throw new Error(`Transaction reverted on-chain: ${hash}`);
+    return hash;
+  }
+
   async getVault(owner: Address): Promise<Address> {
     return this.publicClient.readContract({
       address: this.addresses.vaultFactory,
@@ -65,7 +77,7 @@ export class KitsuneChain {
 
   async createVault(dexRouter?: Address, oracle?: Address): Promise<`0x${string}`> {
     const { wallet, account } = this.requireWallet();
-    return wallet.writeContract({
+    const hash = await wallet.writeContract({
       address: this.addresses.vaultFactory,
       abi: VAULT_FACTORY_ABI,
       functionName: 'createVault',
@@ -73,11 +85,12 @@ export class KitsuneChain {
       account,
       chain: this.chain,
     });
+    return this.waitOrThrow(hash);
   }
 
   async createStrategy(vault: Address, config: StrategyConfigInput): Promise<`0x${string}`> {
     const { wallet, account } = this.requireWallet();
-    return wallet.writeContract({
+    const hash = await wallet.writeContract({
       address: vault,
       abi: USER_VAULT_ABI,
       functionName: 'createStrategy',
@@ -85,11 +98,12 @@ export class KitsuneChain {
       account,
       chain: this.chain,
     });
+    return this.waitOrThrow(hash);
   }
 
   async updateStrategy(vault: Address, strategyId: bigint, config: StrategyConfigInput): Promise<`0x${string}`> {
     const { wallet, account } = this.requireWallet();
-    return wallet.writeContract({
+    const hash = await wallet.writeContract({
       address: vault,
       abi: USER_VAULT_ABI,
       functionName: 'updateStrategy',
@@ -97,11 +111,12 @@ export class KitsuneChain {
       account,
       chain: this.chain,
     });
+    return this.waitOrThrow(hash);
   }
 
   async withdrawStrategy(vault: Address, strategyId: bigint): Promise<`0x${string}`> {
     const { wallet, account } = this.requireWallet();
-    return wallet.writeContract({
+    const hash = await wallet.writeContract({
       address: vault,
       abi: USER_VAULT_ABI,
       functionName: 'withdrawStrategy',
@@ -109,11 +124,12 @@ export class KitsuneChain {
       account,
       chain: this.chain,
     });
+    return this.waitOrThrow(hash);
   }
 
   async pauseStrategy(vault: Address, strategyId: bigint): Promise<`0x${string}`> {
     const { wallet, account } = this.requireWallet();
-    return wallet.writeContract({
+    const hash = await wallet.writeContract({
       address: vault,
       abi: USER_VAULT_ABI,
       functionName: 'pauseStrategy',
@@ -121,11 +137,12 @@ export class KitsuneChain {
       account,
       chain: this.chain,
     });
+    return this.waitOrThrow(hash);
   }
 
   async resumeStrategy(vault: Address, strategyId: bigint): Promise<`0x${string}`> {
     const { wallet, account } = this.requireWallet();
-    return wallet.writeContract({
+    const hash = await wallet.writeContract({
       address: vault,
       abi: USER_VAULT_ABI,
       functionName: 'resumeStrategy',
@@ -133,11 +150,12 @@ export class KitsuneChain {
       account,
       chain: this.chain,
     });
+    return this.waitOrThrow(hash);
   }
 
   async withdraw(vault: Address, token: Address, amount: bigint): Promise<`0x${string}`> {
     const { wallet, account } = this.requireWallet();
-    return wallet.writeContract({
+    const hash = await wallet.writeContract({
       address: vault,
       abi: USER_VAULT_ABI,
       functionName: 'withdraw',
@@ -145,6 +163,7 @@ export class KitsuneChain {
       account,
       chain: this.chain,
     });
+    return this.waitOrThrow(hash);
   }
 
   /**

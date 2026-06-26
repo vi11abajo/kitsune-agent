@@ -45,7 +45,7 @@ describe('tool catalog', () => {
     expect(tools.some(t => t.name === 'strategy_pause')).toBe(false);
     expect(tools.some(t => t.name === 'market_run_backtest')).toBe(false);
     expect(tools.some(t => t.name === 'referral_resolve')).toBe(true);
-    expect(tools.some(t => t.name === 'executor_list')).toBe(false);
+    expect(tools.some(t => t.name === 'executor_list')).toBe(true); // public (auth: 'none')
     expect(tools.some(t => t.name === 'fees_get_dashboard')).toBe(false);
   });
 
@@ -134,7 +134,7 @@ describe('tool catalog', () => {
     const [vaultArg, cfgArg] = chain.createStrategy.mock.calls[0];
     expect(vaultArg).toBe(VAULT);
     expect(cfgArg.dcaMultiplier).toBe('15000');
-    expect(out).toEqual({ txHash: '0xabc', status: 'submitted' });
+    expect(out).toEqual({ txHash: '0xabc', status: 'confirmed' });
   });
 
   it('strategy_create refuses when the vault lacks free funds (hard guard)', async () => {
@@ -174,7 +174,7 @@ describe('tool catalog', () => {
     expect(arg.vault).toBe(VAULT);
     expect(arg.token).toBe('usdc');
     expect(arg.amount).toBe(200000000n);
-    expect(out).toMatchObject({ txHash: '0xdep', status: 'submitted' });
+    expect(out).toMatchObject({ txHash: '0xdep', status: 'confirmed' });
   });
 
   it('vault_deposit accepts native PROS and an explicit vault', async () => {
@@ -230,7 +230,7 @@ describe('tool catalog', () => {
     const out = await find('vault_create').handler({}, ctx);
     expect(client.get).toHaveBeenCalledWith('/config', { chainId: 1672 });
     expect(chain.createVault).toHaveBeenCalledWith('0xROUTER', '0xORACLE');
-    expect(out).toEqual({ txHash: '0xtx', status: 'submitted' });
+    expect(out).toEqual({ txHash: '0xtx', status: 'confirmed' });
   });
 
   it('vault_create falls back to the kit chain defaults when /config is unreachable', async () => {

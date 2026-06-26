@@ -1,7 +1,12 @@
+import { createRequire } from 'node:module';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { buildTools, KitsuneApiClient, KitsuneChain, type KitsuneConfig } from '@kitsune-ai/agent-core';
 import { privateKeyToAccount } from 'viem/accounts';
+
+// Single source of truth for the advertised handshake version: read it from this package's
+// package.json at runtime so it can never drift from the published version (was hardcoded — I-8).
+const PKG_VERSION = (createRequire(import.meta.url)('../package.json') as { version: string }).version;
 
 export function buildMcpToolList(config: KitsuneConfig) {
   return buildTools(config).map(t => ({
@@ -30,8 +35,7 @@ export function createServer(config: KitsuneConfig): Server {
   const tools = buildTools(config);
   const toolMap = new Map(tools.map(t => [t.name, t]));
 
-  // I-8: keep in sync with packages/mcp/package.json version (advertised in the MCP handshake).
-  const server = new Server({ name: 'kitsune-agent-mcp', version: '0.2.15' }, { capabilities: { tools: {} } });
+  const server = new Server({ name: 'kitsune-agent-mcp', version: PKG_VERSION }, { capabilities: { tools: {} } });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: buildMcpToolList(config) }));
 

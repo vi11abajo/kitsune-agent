@@ -4,7 +4,7 @@ import { optStr, optNum, addr } from './types.js';
 export function registerExecutorTools(): ToolSpec[] {
   return [
     {
-      name: 'executor_list', title: 'List Executors', module: 'executor', isWrite: false, auth: 'jwt',
+      name: 'executor_list', title: 'List Executors', module: 'executor', isWrite: false, auth: 'none',
       description: 'List registered executors (the keepers that run strategies on-chain). Use one of these addresses as allowedExecutor when creating a strategy. By default only active executors are returned.',
       inputSchema: {
         type: 'object',
@@ -13,8 +13,9 @@ export function registerExecutorTools(): ToolSpec[] {
           chainId: { type: 'number' },
         },
       },
+      // Public: the executor registry is global on-chain data, so this needs no sign-in (auth: 'none').
       handler: async (a, ctx) =>
-        ctx.client.authedGet('/executors', {
+        ctx.client.get('/executors', {
           active: typeof a.active === 'boolean' ? String(a.active) : undefined,
           chainId: optNum(a, 'chainId'),
         }),

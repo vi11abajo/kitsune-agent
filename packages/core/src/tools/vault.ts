@@ -61,7 +61,7 @@ export function registerVaultTools(): ToolSpec[] {
           }
         }
         const txHash = await ctx.chain.createVault(dexRouter as Address | undefined, oracle as Address | undefined);
-        return { txHash, status: 'submitted' };
+        return { txHash, status: 'confirmed' };
       },
     },
     {
@@ -104,7 +104,7 @@ export function registerVaultTools(): ToolSpec[] {
           };
         };
         const result = await ctx.chain.deposit({ vault, token, amount, getRoute });
-        return { ...result, status: 'submitted' };
+        return { ...result, status: 'confirmed' };
       },
     },
     {
@@ -121,7 +121,7 @@ export function registerVaultTools(): ToolSpec[] {
       },
       handler: async (a, ctx) => {
         const txHash = await ctx.chain.withdraw(addr(a, 'vault') as Address, addr(a, 'token') as Address, BigInt(str(a, 'amount')));
-        return { txHash, status: 'submitted' };
+        return { txHash, status: 'confirmed' };
       },
     },
   ];
